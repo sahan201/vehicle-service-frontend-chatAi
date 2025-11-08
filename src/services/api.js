@@ -63,4 +63,61 @@ export const appointmentService = {
   cancel: (id) => api.put(`/appointments/${id}/cancel`),
 };
 
+// Manager Services - FIXED
+export const managerService = {
+  // FIXED: Changed from /jobs/unassigned to /appointments/unassigned
+  getUnassignedJobs: () => api.get('/manager/appointments/unassigned'),
+  
+  // FIXED: Changed from /jobs/assign to /appointments/:id/assign
+  assignJob: (id, mechanicId) => api.put(`/manager/appointments/${id}/assign`, { mechanicId }),
+  
+  getMechanics: () => api.get('/manager/mechanics'),
+  getDashboardStats: () => api.get('/manager/stats'),
+  createMechanic: (data) => api.post('/manager/mechanics', data),
+};
+
+// Mechanic Services - FIXED
+export const mechanicService = {
+  getMyJobs: () => api.get('/mechanic/jobs'),
+  getMechanicStats: () => api.get('/mechanic/stats'),
+  
+  // FIXED: Changed from /start/:id to /:id/start
+  startJob: (id) => api.put(`/mechanic/jobs/${id}/start`),
+  
+  // FIXED: Changed from /finish/:id to /:id/complete
+  finishJob: (id) => api.put(`/mechanic/jobs/${id}/complete`),
+  
+  addParts: (id, data) => api.post(`/mechanic/jobs/${id}/parts`, data),
+  addLabor: (id, data) => api.post(`/mechanic/jobs/${id}/labor`, data),
+};
+
+// Feedback Services
+export const feedbackService = {
+  create: (data) => api.post('/feedback', data),
+  getAll: () => api.get('/feedback'),
+  getMyFeedback: () => api.get('/feedback/my-feedback'),
+  getMechanicRatings: () => api.get('/feedback/mechanic-ratings'),
+};
+
+// Inventory Services
+export const inventoryService = {
+  getAll: () => api.get('/inventory'),
+  getById: (id) => api.get(`/inventory/${id}`),
+  create: (data) => api.post('/inventory', data),
+  update: (id, data) => api.put(`/inventory/${id}`, data),
+  delete: (id) => api.delete(`/inventory/${id}`),
+};
+
+// Report Services
+export const reportService = {
+  generate: (params) => api.get('/reports/generate', { params }),
+  getBookingStats: () => api.get('/reports/booking-stats'),
+};
+
+// Settings Services
+export const settingsService = {
+  get: () => api.get('/settings'),
+  update: (data) => api.put('/settings', data),
+};
+
 export default api;
