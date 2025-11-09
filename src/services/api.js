@@ -63,30 +63,21 @@ export const appointmentService = {
   cancel: (id) => api.put(`/appointments/${id}/cancel`),
 };
 
-// Manager Services - FIXED
+// Manager Services
 export const managerService = {
-  // FIXED: Changed from /jobs/unassigned to /appointments/unassigned
   getUnassignedJobs: () => api.get('/manager/appointments/unassigned'),
-  
-  // FIXED: Changed from /jobs/assign to /appointments/:id/assign
   assignJob: (id, mechanicId) => api.put(`/manager/appointments/${id}/assign`, { mechanicId }),
-  
   getMechanics: () => api.get('/manager/mechanics'),
   getDashboardStats: () => api.get('/manager/stats'),
   createMechanic: (data) => api.post('/manager/mechanics', data),
 };
 
-// Mechanic Services - FIXED
+// Mechanic Services
 export const mechanicService = {
   getMyJobs: () => api.get('/mechanic/jobs'),
   getMechanicStats: () => api.get('/mechanic/stats'),
-  
-  // FIXED: Changed from /start/:id to /:id/start
   startJob: (id) => api.put(`/mechanic/jobs/${id}/start`),
-  
-  // FIXED: Changed from /finish/:id to /:id/complete
   finishJob: (id) => api.put(`/mechanic/jobs/${id}/complete`),
-  
   addParts: (id, data) => api.post(`/mechanic/jobs/${id}/parts`, data),
   addLabor: (id, data) => api.post(`/mechanic/jobs/${id}/labor`, data),
 };
@@ -106,12 +97,33 @@ export const inventoryService = {
   create: (data) => api.post('/inventory', data),
   update: (id, data) => api.put(`/inventory/${id}`, data),
   delete: (id) => api.delete(`/inventory/${id}`),
+  getLowStock: () => api.get('/inventory/low-stock'),
 };
 
-// Report Services
+// Complaint Services (NEW)
+export const complaintService = {
+  create: (data) => api.post('/complaints', data),
+  getAll: (status) => api.get('/complaints', { params: { status } }),
+  getMyComplaints: () => api.get('/complaints/my-complaints'),
+  getById: (id) => api.get(`/complaints/${id}`),
+  update: (id, data) => api.put(`/complaints/${id}`, data),
+  delete: (id) => api.delete(`/complaints/${id}`),
+  getStats: () => api.get('/complaints/stats'),
+};
+
+// Report Services (NEW)
 export const reportService = {
-  generate: (params) => api.get('/reports/generate', { params }),
-  getBookingStats: () => api.get('/reports/booking-stats'),
+  downloadBusinessReport: (startDate, endDate) => {
+    return api.get('/reports/business-report', {
+      params: { startDate, endDate },
+      responseType: 'blob', // Important for file download
+    });
+  },
+  getBookingStats: (period) => api.get('/reports/booking-stats', { params: { period } }),
+  getRevenueReport: (startDate, endDate) => {
+    return api.get('/reports/revenue', { params: { startDate, endDate } });
+  },
+  getInventoryReport: () => api.get('/reports/inventory'),
 };
 
 // Settings Services

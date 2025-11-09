@@ -4,7 +4,8 @@ import {
   appointmentService, 
   managerService, 
   inventoryService,
-  feedbackService 
+  feedbackService,
+  complaintService,
 } from '../services/api';
 
 const ManagerDashboard = () => {
@@ -15,6 +16,8 @@ const ManagerDashboard = () => {
   const [mechanics, setMechanics] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [feedback, setFeedback] = useState([]);
+  const [complaints, setComplaints] = useState([]); // NEW
+  const [complaintStats, setComplaintStats] = useState(null); // NEW
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,6 +34,15 @@ const ManagerDashboard = () => {
     costPrice: 0,
     salePrice: 0,
     lowStockThreshold: 5
+  });
+
+  // Complaint Response Modal State (NEW)
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [complaintResponse, setComplaintResponse] = useState({
+    status: '',
+    response: '',
+    priority: '',
   });
   
   const [stats, setStats] = useState({
@@ -77,6 +89,15 @@ const ManagerDashboard = () => {
       if (activeTab === 'feedback') {
         const feedRes = await feedbackService.getAll();
         setFeedback(feedRes.data.feedback || feedRes.data.feedbacks || []);
+      }
+
+      if (activeTab === 'complaints') { // NEW
+        const [complaintsRes, statsRes] = await Promise.all([
+          complaintService.getAll(),
+          complaintService.getStats(),
+        ]);
+        setComplaints(complaintsRes.data.complaints || []);
+        setComplaintStats(statsRes.data.stats || null);
       }
 
       setLoading(false);
@@ -148,7 +169,6 @@ const ManagerDashboard = () => {
     setError('');
     setSuccess('');
 
-    // Validation
     if (!inventoryForm.name || !inventoryForm.costPrice || !inventoryForm.salePrice) {
       setError('Please fill in all required fields');
       setTimeout(() => setError(''), 3000);
@@ -189,6 +209,62 @@ const ManagerDashboard = () => {
     }
   };
 
+  // Complaint Management Functions (NEW)
+  const openComplaintModal = (complaint) => {
+    setSelectedComplaint(complaint);
+    setComplaintResponse({
+      status: complaint.status,
+      response: complaint.response || '',
+      priority: complaint.priority,
+    });
+    setShowComplaintModal(true);
+  };
+
+  const closeComplaintModal = () => {
+    setShowComplaintModal(false);
+    setSelectedComplaint(null);
+    setComplaintResponse({
+      status: '',
+      response: '',
+      priority: '',
+    });
+  };
+
+  const handleComplaintUpdate = async () => {
+    if (!complaintResponse.response && complaintResponse.status === selectedComplaint.status) {
+      setError('Please add a response or change the status');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      await complaintService.update(selectedComplaint._id, complaintResponse);
+      setSuccess('Complaint updated successfully! Customer will be notified.');
+      closeComplaintModal();
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError('Failed to update complaint');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteComplaint = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this complaint?')) {
+      return;
+    }
+
+    try {
+      await complaintService.delete(id);
+      setSuccess('Complaint deleted successfully!');
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError('Failed to delete complaint');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       'Scheduled': 'badge-info',
@@ -197,6 +273,26 @@ const ManagerDashboard = () => {
       'Cancelled': 'badge-danger'
     };
     return badges[status] || 'badge-info';
+  };
+
+  const getComplaintStatusBadge = (status) => { // NEW
+    const badges = {
+      'Open': 'badge-warning',
+      'In Review': 'badge-info',
+      'Resolved': 'badge-success',
+      'Closed': 'badge-danger'
+    };
+    return badges[status] || 'badge-info';
+  };
+
+  const getPriorityBadge = (priority) => { // NEW
+    const badges = {
+      'Low': 'badge-info',
+      'Medium': 'badge-warning',
+      'High': 'badge-danger',
+      'Urgent': 'badge-danger'
+    };
+    return badges[priority] || 'badge-info';
   };
 
   if (loading && activeTab === 'overview') {
@@ -244,6 +340,24 @@ const ManagerDashboard = () => {
           onClick={() => setActiveTab('feedback')}
         >
           ⭐ Feedback
+        </button>
+        <button 
+          className={`btn ${activeTab === 'complaints' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setActiveTab('complaints')}
+        >
+          📝 Complaints
+          {complaintStats && complaintStats.byStatus.open > 0 && (
+            <span style={{ 
+              marginLeft: '0.5rem', 
+              background: '#f39c12', 
+              color: 'white',
+              padding: '0.2rem 0.5rem',
+              borderRadius: '10px',
+              fontSize: '0.8rem'
+            }}>
+              {complaintStats.byStatus.open}
+            </span>
+          )}
         </button>
       </div>
 
@@ -412,7 +526,7 @@ const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* Inventory Tab - FIXED */}
+      {/* Inventory Tab */}
       {activeTab === 'inventory' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -540,7 +654,116 @@ const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* Inventory Modal - FIXED */}
+      {/* Complaints Tab (NEW) */}
+      {activeTab === 'complaints' && (
+        <>
+          {/* Complaint Stats */}
+          {complaintStats && (
+            <div className="stats">
+              <div className="stat-card">
+                <h3>{complaintStats.total}</h3>
+                <p>Total Complaints</p>
+              </div>
+              <div className="stat-card">
+                <h3 style={{ color: '#f39c12' }}>{complaintStats.byStatus.open}</h3>
+                <p>Open</p>
+              </div>
+              <div className="stat-card">
+                <h3>{complaintStats.byStatus.inReview}</h3>
+                <p>In Review</p>
+              </div>
+              <div className="stat-card">
+                <h3 style={{ color: '#27ae60' }}>{complaintStats.byStatus.resolved}</h3>
+                <p>Resolved</p>
+              </div>
+            </div>
+          )}
+
+          {/* Complaints List */}
+          <div className="card">
+            <h3 className="card-header">Customer Complaints</h3>
+            {loading ? (
+              <p style={{ textAlign: 'center', padding: '2rem' }}>Loading...</p>
+            ) : complaints.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>No complaints yet</p>
+            ) : (
+              <div className="grid grid-2">
+                {complaints.map((complaint) => (
+                  <div key={complaint._id} className="card" style={{ background: '#f8f9fa' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <strong style={{ color: '#667eea' }}>{complaint.subject}</strong>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <span className={`badge ${getPriorityBadge(complaint.priority)}`}>
+                          {complaint.priority}
+                        </span>
+                        <span className={`badge ${getComplaintStatusBadge(complaint.status)}`}>
+                          {complaint.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '0.85rem', color: '#999', marginBottom: '0.5rem' }}>
+                      <strong>From:</strong> {complaint.customer?.name} ({complaint.customer?.email})
+                    </p>
+
+                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      {complaint.description}
+                    </p>
+
+                    {complaint.appointment && (
+                      <p style={{ fontSize: '0.85rem', color: '#999', marginBottom: '0.5rem' }}>
+                        <strong>Related to:</strong> {complaint.appointment.serviceType} on {complaint.appointment.date}
+                      </p>
+                    )}
+
+                    {complaint.response && (
+                      <div style={{ 
+                        marginTop: '0.75rem', 
+                        padding: '0.5rem', 
+                        background: '#e7f3ff', 
+                        borderLeft: '3px solid #667eea',
+                        borderRadius: '4px'
+                      }}>
+                        <strong style={{ fontSize: '0.85rem', color: '#667eea' }}>Your Response:</strong>
+                        <p style={{ fontSize: '0.85rem', color: '#555', margin: '0.25rem 0 0 0' }}>
+                          {complaint.response}
+                        </p>
+                      </div>
+                    )}
+
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '0.5rem', 
+                      marginTop: '1rem',
+                      paddingTop: '0.75rem',
+                      borderTop: '1px solid #ddd'
+                    }}>
+                      <button 
+                        className="btn btn-primary btn-small"
+                        onClick={() => openComplaintModal(complaint)}
+                      >
+                        {complaint.response ? '✏️ Update' : '📝 Respond'}
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-small"
+                        onClick={() => handleDeleteComplaint(complaint._id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+
+                    <small style={{ display: 'block', marginTop: '0.5rem', color: '#999' }}>
+                      Submitted: {new Date(complaint.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Inventory Modal */}
       {showInventoryModal && (
         <div className="modal-overlay" onClick={closeInventoryModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -653,27 +876,6 @@ const ManagerDashboard = () => {
                 />
               </div>
 
-              <div style={{ 
-                background: '#f8f9fa', 
-                padding: '1rem', 
-                borderRadius: '5px', 
-                marginBottom: '1.5rem',
-                border: '1px solid #e0e0e0'
-              }}>
-                <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#667eea' }}>
-                  💡 Summary
-                </strong>
-                <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                  <p>• Item: {inventoryForm.name || 'Not specified'}</p>
-                  <p>• Stock: {inventoryForm.quantity} {inventoryForm.unit}</p>
-                  <p>• Cost: Rs. {inventoryForm.costPrice.toFixed(2)}</p>
-                  <p>• Price: Rs. {inventoryForm.salePrice.toFixed(2)}</p>
-                  {inventoryForm.costPrice > 0 && inventoryForm.salePrice > 0 && (
-                    <p>• Profit per unit: Rs. {(inventoryForm.salePrice - inventoryForm.costPrice).toFixed(2)}</p>
-                  )}
-                </div>
-              </div>
-
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button 
                   className="btn btn-primary"
@@ -684,6 +886,84 @@ const ManagerDashboard = () => {
                 <button 
                   className="btn btn-secondary"
                   onClick={closeInventoryModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complaint Response Modal (NEW) */}
+      {showComplaintModal && selectedComplaint && (
+        <div className="modal-overlay" onClick={closeComplaintModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <span className="modal-close" onClick={closeComplaintModal}>×</span>
+            <h3 style={{ marginBottom: '1.5rem' }}>📝 Respond to Complaint</h3>
+            
+            {/* Complaint Details */}
+            <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '5px', marginBottom: '1.5rem' }}>
+              <h4 style={{ color: '#667eea', marginBottom: '0.5rem' }}>{selectedComplaint.subject}</h4>
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>{selectedComplaint.description}</p>
+              <p style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.5rem' }}>
+                <strong>From:</strong> {selectedComplaint.customer?.name} ({selectedComplaint.customer?.email})
+              </p>
+            </div>
+
+            <div>
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={complaintResponse.status}
+                    onChange={(e) => setComplaintResponse({...complaintResponse, status: e.target.value})}
+                  >
+                    <option value="Open">Open</option>
+                    <option value="In Review">In Review</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={complaintResponse.priority}
+                    onChange={(e) => setComplaintResponse({...complaintResponse, priority: e.target.value})}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Your Response *</label>
+                <textarea
+                  value={complaintResponse.response}
+                  onChange={(e) => setComplaintResponse({...complaintResponse, response: e.target.value})}
+                  rows="6"
+                  placeholder="Type your response to the customer..."
+                />
+              </div>
+
+              <div className="alert alert-info" style={{ fontSize: '0.9rem' }}>
+                <strong>💡 Note:</strong> The customer will receive an email notification with your response.
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleComplaintUpdate}
+                >
+                  ✅ Send Response
+                </button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={closeComplaintModal}
                 >
                   Cancel
                 </button>
