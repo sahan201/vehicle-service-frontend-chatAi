@@ -88,7 +88,7 @@ const BookAppointment = () => {
   // Check if selected date is off-peak (Monday-Friday)
   const isOffPeak = () => {
     if (!formData.date) return false;
-    const date = new Date(formData.date);
+    const date = new Date(formData.date);  //date: new Date(formData.date).toISOString(),
     const day = date.getDay();
     return day >= 1 && day <= 5; // Monday = 1, Friday = 5
   };
