@@ -4,8 +4,7 @@ import {
   appointmentService, 
   managerService, 
   inventoryService,
-  feedbackService,
-  reportService 
+  feedbackService 
 } from '../services/api';
 
 const ManagerDashboard = () => {
@@ -19,6 +18,21 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Inventory Modal State
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [inventoryForm, setInventoryForm] = useState({
+    name: '',
+    partNumber: '',
+    supplier: '',
+    quantity: 0,
+    unit: 'units',
+    costPrice: 0,
+    salePrice: 0,
+    lowStockThreshold: 5
+  });
+  
   const [stats, setStats] = useState({
     totalAppointments: 0,
     scheduled: 0,
@@ -81,6 +95,96 @@ const ManagerDashboard = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       setError('Failed to assign job');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Inventory Modal Functions
+  const openInventoryModal = (item = null) => {
+    if (item) {
+      setEditingItem(item);
+      setInventoryForm({
+        name: item.name,
+        partNumber: item.partNumber || '',
+        supplier: item.supplier || '',
+        quantity: item.quantity,
+        unit: item.unit,
+        costPrice: item.costPrice,
+        salePrice: item.salePrice,
+        lowStockThreshold: item.lowStockThreshold
+      });
+    } else {
+      setEditingItem(null);
+      setInventoryForm({
+        name: '',
+        partNumber: '',
+        supplier: '',
+        quantity: 0,
+        unit: 'units',
+        costPrice: 0,
+        salePrice: 0,
+        lowStockThreshold: 5
+      });
+    }
+    setShowInventoryModal(true);
+  };
+
+  const closeInventoryModal = () => {
+    setShowInventoryModal(false);
+    setEditingItem(null);
+    setInventoryForm({
+      name: '',
+      partNumber: '',
+      supplier: '',
+      quantity: 0,
+      unit: 'units',
+      costPrice: 0,
+      salePrice: 0,
+      lowStockThreshold: 5
+    });
+  };
+
+  const handleInventorySubmit = async () => {
+    setError('');
+    setSuccess('');
+
+    // Validation
+    if (!inventoryForm.name || !inventoryForm.costPrice || !inventoryForm.salePrice) {
+      setError('Please fill in all required fields');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      if (editingItem) {
+        await inventoryService.update(editingItem._id, inventoryForm);
+        setSuccess('Item updated successfully!');
+      } else {
+        await inventoryService.create(inventoryForm);
+        setSuccess('Item added successfully!');
+      }
+      
+      closeInventoryModal();
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to save item');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) {
+      return;
+    }
+
+    try {
+      await inventoryService.delete(id);
+      setSuccess('Item deleted successfully!');
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError('Failed to delete item');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -201,7 +305,7 @@ const ManagerDashboard = () => {
                           {apt.status}
                         </span>
                       </td>
-                      <td>{apt.mechanic?.name || 'Unassigned'}</td>
+                      <td>{apt.assignedMechanic?.name || 'Unassigned'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -254,7 +358,7 @@ const ManagerDashboard = () => {
                         {apt.status}
                       </span>
                     </td>
-                    <td>{apt.mechanic?.name || '-'}</td>
+                    <td>{apt.assignedMechanic?.name || '-'}</td>
                     <td>
                       {apt.discountEligible ? (
                         <span className="badge badge-success">5%</span>
@@ -308,37 +412,92 @@ const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* Inventory Tab */}
+      {/* Inventory Tab - FIXED */}
       {activeTab === 'inventory' && (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 className="card-header" style={{ marginBottom: 0 }}>Inventory</h3>
-            <button className="btn btn-primary btn-small">➕ Add Item</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 className="card-header" style={{ marginBottom: 0 }}>Inventory Management</h3>
+            <button 
+              className="btn btn-primary"
+              onClick={() => openInventoryModal()}
+            >
+              ➕ Add New Item
+            </button>
           </div>
+          
           {loading ? (
-            <p style={{ textAlign: 'center', padding: '2rem' }}>Loading...</p>
+            <p style={{ textAlign: 'center', padding: '2rem' }}>Loading inventory...</p>
           ) : inventory.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>No inventory items</p>
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+              <h3>No inventory items yet</h3>
+              <p>Start by adding your first inventory item</p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => openInventoryModal()}
+                style={{ marginTop: '1rem' }}
+              >
+                Add First Item
+              </button>
+            </div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
                   <th>Part Name</th>
+                  <th>Part Number</th>
                   <th>Quantity</th>
-                  <th>Price</th>
+                  <th>Cost Price</th>
+                  <th>Sale Price</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {inventory.map((item) => (
                   <tr key={item._id}>
-                    <td>{item.partName || item.name}</td>
-                    <td>{item.quantity}</td>
-                    <td>Rs. {item.price}</td>
                     <td>
-                      <span className={`badge ${item.quantity > 10 ? 'badge-success' : 'badge-warning'}`}>
-                        {item.quantity > 10 ? 'In Stock' : 'Low Stock'}
+                      <strong>{item.name}</strong>
+                      {item.supplier && (
+                        <>
+                          <br />
+                          <small style={{ color: '#666' }}>Supplier: {item.supplier}</small>
+                        </>
+                      )}
+                    </td>
+                    <td>{item.partNumber || '-'}</td>
+                    <td>
+                      {item.quantity} {item.unit}
+                      {item.quantity <= item.lowStockThreshold && (
+                        <>
+                          <br />
+                          <small style={{ color: '#f39c12' }}>⚠️ Low Stock</small>
+                        </>
+                      )}
+                    </td>
+                    <td>Rs. {item.costPrice.toFixed(2)}</td>
+                    <td>Rs. {item.salePrice.toFixed(2)}</td>
+                    <td>
+                      <span className={`badge ${item.quantity > item.lowStockThreshold ? 'badge-success' : 'badge-warning'}`}>
+                        {item.quantity > item.lowStockThreshold ? 'In Stock' : 'Low Stock'}
                       </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          className="btn btn-secondary btn-small"
+                          onClick={() => openInventoryModal(item)}
+                          title="Edit"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button 
+                          className="btn btn-danger btn-small"
+                          onClick={() => handleDeleteItem(item._id)}
+                          title="Delete"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -367,8 +526,8 @@ const ManagerDashboard = () => {
                     </span>
                   </div>
                   <p style={{ color: '#666', fontSize: '0.9rem' }}>{fb.comment}</p>
-                  {fb.mechanic && (
-                    <small style={{ color: '#999' }}>Mechanic: {fb.mechanic.name}</small>
+                  {fb.appointment?.assignedMechanic && (
+                    <small style={{ color: '#999' }}>Mechanic: {fb.appointment.assignedMechanic.name}</small>
                   )}
                   <br />
                   <small style={{ color: '#999' }}>
@@ -378,6 +537,159 @@ const ManagerDashboard = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Inventory Modal - FIXED */}
+      {showInventoryModal && (
+        <div className="modal-overlay" onClick={closeInventoryModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <span className="modal-close" onClick={closeInventoryModal}>×</span>
+            <h3 style={{ marginBottom: '1.5rem' }}>
+              {editingItem ? '✏️ Edit Inventory Item' : '➕ Add New Inventory Item'}
+            </h3>
+            
+            <div>
+              <div className="form-group">
+                <label>Item Name * <small style={{ color: '#999' }}>(Required)</small></label>
+                <input
+                  type="text"
+                  value={inventoryForm.name}
+                  onChange={(e) => setInventoryForm({...inventoryForm, name: e.target.value})}
+                  placeholder="e.g., Engine Oil 5W-30, Brake Pads"
+                />
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Part Number <small style={{ color: '#999' }}>(Optional)</small></label>
+                  <input
+                    type="text"
+                    value={inventoryForm.partNumber}
+                    onChange={(e) => setInventoryForm({...inventoryForm, partNumber: e.target.value})}
+                    placeholder="e.g., BP-123"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Supplier <small style={{ color: '#999' }}>(Optional)</small></label>
+                  <input
+                    type="text"
+                    value={inventoryForm.supplier}
+                    onChange={(e) => setInventoryForm({...inventoryForm, supplier: e.target.value})}
+                    placeholder="e.g., ABC Parts Ltd"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Quantity * <small style={{ color: '#999' }}>(Required)</small></label>
+                  <input
+                    type="number"
+                    value={inventoryForm.quantity}
+                    onChange={(e) => setInventoryForm({...inventoryForm, quantity: parseInt(e.target.value) || 0})}
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Unit * <small style={{ color: '#999' }}>(Required)</small></label>
+                  <select
+                    value={inventoryForm.unit}
+                    onChange={(e) => setInventoryForm({...inventoryForm, unit: e.target.value})}
+                  >
+                    <option value="units">Units</option>
+                    <option value="liters">Liters</option>
+                    <option value="pieces">Pieces</option>
+                    <option value="kg">Kilograms</option>
+                    <option value="sets">Sets</option>
+                    <option value="boxes">Boxes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Cost Price (Rs.) * <small style={{ color: '#999' }}>(Required)</small></label>
+                  <input
+                    type="number"
+                    value={inventoryForm.costPrice}
+                    onChange={(e) => setInventoryForm({...inventoryForm, costPrice: parseFloat(e.target.value) || 0})}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Sale Price (Rs.) * <small style={{ color: '#999' }}>(Required)</small></label>
+                  <input
+                    type="number"
+                    value={inventoryForm.salePrice}
+                    onChange={(e) => setInventoryForm({...inventoryForm, salePrice: parseFloat(e.target.value) || 0})}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                  {inventoryForm.costPrice > 0 && inventoryForm.salePrice > 0 && (
+                    <small style={{ color: '#666', display: 'block', marginTop: '0.25rem' }}>
+                      Profit: Rs. {(inventoryForm.salePrice - inventoryForm.costPrice).toFixed(2)} 
+                      ({(((inventoryForm.salePrice - inventoryForm.costPrice) / inventoryForm.costPrice) * 100).toFixed(1)}%)
+                    </small>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Low Stock Threshold * <small style={{ color: '#999' }}>(Alert when stock falls below this)</small></label>
+                <input
+                  type="number"
+                  value={inventoryForm.lowStockThreshold}
+                  onChange={(e) => setInventoryForm({...inventoryForm, lowStockThreshold: parseInt(e.target.value) || 5})}
+                  min="0"
+                  placeholder="5"
+                />
+              </div>
+
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '1rem', 
+                borderRadius: '5px', 
+                marginBottom: '1.5rem',
+                border: '1px solid #e0e0e0'
+              }}>
+                <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#667eea' }}>
+                  💡 Summary
+                </strong>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                  <p>• Item: {inventoryForm.name || 'Not specified'}</p>
+                  <p>• Stock: {inventoryForm.quantity} {inventoryForm.unit}</p>
+                  <p>• Cost: Rs. {inventoryForm.costPrice.toFixed(2)}</p>
+                  <p>• Price: Rs. {inventoryForm.salePrice.toFixed(2)}</p>
+                  {inventoryForm.costPrice > 0 && inventoryForm.salePrice > 0 && (
+                    <p>• Profit per unit: Rs. {(inventoryForm.salePrice - inventoryForm.costPrice).toFixed(2)}</p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleInventorySubmit}
+                >
+                  {editingItem ? '✅ Update Item' : '➕ Add Item'}
+                </button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={closeInventoryModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
