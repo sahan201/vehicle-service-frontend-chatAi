@@ -145,7 +145,14 @@ const Appointments = () => {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <a 
+                    href={`/customer/track/${appointment._id}`}
+                    className="btn btn-primary btn-small"
+                  >
+                    🔍 Track Service
+                  </a>
+
                   {appointment.status === 'Scheduled' && (
                     <button 
                       className="btn btn-danger btn-small"

@@ -8,6 +8,7 @@ import CustomerDashboard from './pages/CustomerDashboard';
 import Vehicles from './pages/Vehicles';
 import BookAppointment from './pages/BookAppointment';
 import Appointments from './pages/Appointments';
+import TrackService from './pages/TrackService';
 import Feedback from './pages/Feedback';
 import ManagerDashboard from './pages/ManagerDashboard';
 import MechanicDashboard from './pages/MechanicDashboard';
@@ -63,6 +64,11 @@ function AppRoutes() {
         <Route path="/customer/appointments" element={
           <ProtectedRoute allowedRoles={['Customer']}>
             <Appointments />
+          </ProtectedRoute>
+        } />
+        <Route path="/customer/track/:id" element={
+          <ProtectedRoute allowedRoles={['Customer']}>
+            <TrackService />
           </ProtectedRoute>
         } />
         <Route path="/customer/feedback" element={

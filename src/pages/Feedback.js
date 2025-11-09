@@ -9,7 +9,7 @@ const Feedback = () => {
 
   const [appointment, setAppointment] = useState(null);
   const [formData, setFormData] = useState({
-    appointment: appointmentId || '',
+    appointmentId: appointmentId || '',
     rating: 5,
     comment: ''
   });
@@ -51,11 +51,12 @@ const Feedback = () => {
 
     try {
       await feedbackService.create({
-        ...formData,
-        appointment: appointmentId || formData.appointment
+        appointmentId: appointmentId || formData.appointmentId,
+        rating: formData.rating,
+        comment: formData.comment
       });
       setSuccess('Thank you for your feedback! 🎉');
-      setFormData({ appointment: '', rating: 5, comment: '' });
+      setFormData({ appointmentId: '', rating: 5, comment: '' });
       
       setTimeout(() => {
         navigate('/customer/appointments');
