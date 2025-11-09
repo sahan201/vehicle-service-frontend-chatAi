@@ -91,8 +91,8 @@ const Feedback = () => {
               </h3>
               <p><strong>Vehicle:</strong> {appointment.vehicle?.make} {appointment.vehicle?.model}</p>
               <p><strong>Date:</strong> {appointment.date}</p>
-              {appointment.mechanic && (
-                <p><strong>Mechanic:</strong> {appointment.mechanic.name}</p>
+              {appointment.assignedMechanic && (
+                <p><strong>Mechanic:</strong> {appointment.assignedMechanic.name}</p>
               )}
             </div>
           )}
@@ -185,7 +185,7 @@ const Feedback = () => {
                 {fb.appointment && (
                   <small style={{ color: '#999' }}>
                     {fb.appointment.vehicle?.make} {fb.appointment.vehicle?.model}
-                    {fb.appointment.mechanic && ` • Mechanic: ${fb.appointment.mechanic.name}`}
+                    {fb.appointment.assignedMechanic && ` • Mechanic: ${fb.appointment.assignedMechanic.name}`}
                   </small>
                 )}
                 

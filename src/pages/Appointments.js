@@ -138,7 +138,7 @@ const Appointments = () => {
                     </p>
                   )}
 
-                  {appointment.mechanic && (
+                  {appointment.assignedMechanic && (
                     <p style={{ marginTop: '0.5rem' }}>
                       <strong>👨‍🔧 Mechanic:</strong> {appointment.mechanic.name}
                     </p>
