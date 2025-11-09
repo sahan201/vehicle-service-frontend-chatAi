@@ -27,6 +27,7 @@ const Navbar = () => {
                 <Link to="/customer/dashboard">Dashboard</Link>
                 <Link to="/customer/vehicles">My Vehicles</Link>
                 <Link to="/customer/appointments">Appointments</Link>
+                <Link to="/customer/complaints">Complaints</Link>
               </>
             )}
             
@@ -41,6 +42,7 @@ const Navbar = () => {
               <>
                 <Link to="/manager/dashboard">Dashboard</Link>
                 <Link to="/manager/appointments">All Appointments</Link>
+                <Link to="/manager/reports">Reports</Link>
               </>
             )}
             

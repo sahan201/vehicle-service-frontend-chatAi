@@ -7,6 +7,7 @@ import {
   feedbackService,
   complaintService,
 } from '../services/api';
+import Reports from './Reports';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -340,6 +341,12 @@ const ManagerDashboard = () => {
           onClick={() => setActiveTab('feedback')}
         >
           ⭐ Feedback
+        </button>
+        <button 
+        className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
+        onClick={() => setActiveTab('reports')}
+        >
+        📊 Reports
         </button>
         <button 
           className={`btn ${activeTab === 'complaints' ? 'btn-primary' : 'btn-secondary'}`}
@@ -762,6 +769,9 @@ const ManagerDashboard = () => {
           </div>
         </>
       )}
+
+      {/* Reports Tab */}
+      {activeTab === 'reports' && <Reports />}
 
       {/* Inventory Modal */}
       {showInventoryModal && (

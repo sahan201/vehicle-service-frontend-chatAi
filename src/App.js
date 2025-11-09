@@ -13,6 +13,8 @@ import Feedback from './pages/Feedback';
 import ManagerDashboard from './pages/ManagerDashboard';
 import MechanicDashboard from './pages/MechanicDashboard';
 import './styles/App.css';
+import Complaints from './pages/Complaints';
+import Reports from './pages/Reports';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -99,6 +101,20 @@ function AppRoutes() {
           <ProtectedRoute allowedRoles={['Mechanic']}>
             <MechanicDashboard />
           </ProtectedRoute>
+        } />
+
+        {/* Customer Complaints Route */}
+        <Route path="/customer/complaints" element={
+        <ProtectedRoute allowedRoles={['Customer']}>
+        <Complaints />
+        </ProtectedRoute>
+        } />
+
+        {/* Manager Reports Route */}
+        <Route path="/manager/reports" element={
+        <ProtectedRoute allowedRoles={['Manager']}>
+        <Reports />
+        </ProtectedRoute>
         } />
         
         {/* Default Route */}

@@ -174,6 +174,9 @@ const CustomerDashboard = () => {
             <a href="/customer/appointments" className="btn btn-secondary">
               📋 View All Appointments
             </a>
+            <a href="/customer/complaints" className="btn btn-secondary">
+              📝 Submit Complaint
+            </a>
           </div>
         </div>
       </div>
