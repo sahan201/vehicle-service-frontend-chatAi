@@ -98,9 +98,10 @@ export const inventoryService = {
   update: (id, data) => api.put(`/inventory/${id}`, data),
   delete: (id) => api.delete(`/inventory/${id}`),
   getLowStock: () => api.get('/inventory/low-stock'),
+  sendOrder: (id, data) => api.post(`/inventory/${id}/order`, data), // NEW
 };
 
-// Complaint Services (NEW)
+// Complaint Services
 export const complaintService = {
   create: (data) => api.post('/complaints', data),
   getAll: (status) => api.get('/complaints', { params: { status } }),
@@ -111,12 +112,12 @@ export const complaintService = {
   getStats: () => api.get('/complaints/stats'),
 };
 
-// Report Services (NEW)
+// Report Services
 export const reportService = {
   downloadBusinessReport: (startDate, endDate) => {
     return api.get('/reports/business-report', {
       params: { startDate, endDate },
-      responseType: 'blob', // Important for file download
+      responseType: 'blob',
     });
   },
   getBookingStats: (period) => api.get('/reports/booking-stats', { params: { period } }),
