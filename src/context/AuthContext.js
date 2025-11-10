@@ -1,3 +1,4 @@
+// src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/api';
 
@@ -20,49 +21,81 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem('user');
     
     if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        console.log('Restored user from localStorage:', parsedUser); // Debug log
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login for:', email); // Debug log
       const response = await authService.login({ email, password });
       const { token, user } = response.data;
+      
+      console.log('Login response received:', { token: token ? 'present' : 'missing', user }); // Debug log
+      
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Validate user role
+      const validRoles = ['Customer', 'Mechanic', 'Manager'];
+      if (!validRoles.includes(user.role)) {
+        throw new Error('Invalid user role');
+      }
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       
+      console.log('Login successful. User set:', user); // Debug log
+      
       return { success: true, user };
     } catch (error) {
+      console.error('Login error:', error); // Debug log
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+        message: error.response?.data?.message || error.message || 'Login failed' 
       };
     }
   };
 
   const register = async (name, email, password) => {
     try {
-      // Role is automatically set to Customer in backend
+      console.log('Attempting registration for:', email); // Debug log
       const response = await authService.register({ name, email, password });
       const { token, user } = response.data;
+      
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       
+      console.log('Registration successful. User set:', user); // Debug log
+      
       return { success: true, user };
     } catch (error) {
+      console.error('Registration error:', error); // Debug log
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+        message: error.response?.data?.message || error.message || 'Registration failed' 
       };
     }
   };
 
   const logout = () => {
+    console.log('Logging out user'); // Debug log
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
