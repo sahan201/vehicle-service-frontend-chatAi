@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on mount
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     
@@ -44,9 +43,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role = 'Customer') => {
+  const register = async (name, email, password) => {
     try {
-      const response = await authService.register({ name, email, password, role });
+      // Role is automatically set to Customer in backend
+      const response = await authService.register({ name, email, password });
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);

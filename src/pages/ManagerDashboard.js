@@ -31,6 +31,13 @@ const ManagerDashboard = () => {
     phoneNumber: "",
   });
 
+  const [mechanicForm, setMechanicForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [showMechanicModal, setShowMechanicModal] = useState(false);
+
   // Inventory Modal State
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -93,6 +100,12 @@ const ManagerDashboard = () => {
       if (activeTab === "inventory") {
         const invRes = await inventoryService.getAll();
         setInventory(invRes.data.items || invRes.data.inventory || []);
+      }
+
+      // ✅ FIX: Load mechanics when 'mechanics' tab is active
+      if (activeTab === "mechanics") {
+        const mechanicsRes = await managerService.getMechanics();
+        setMechanics(mechanicsRes.data.mechanics || []);
       }
 
       if (activeTab === "feedback") {
@@ -277,6 +290,34 @@ const ManagerDashboard = () => {
     }
   };
 
+  const handleCreateMechanic = async (e) => {
+    e.preventDefault();
+    try {
+      await managerService.createMechanic(mechanicForm);
+      setSuccess("Mechanic created successfully!");
+      setShowMechanicModal(false);
+      setMechanicForm({ name: "", email: "", password: "" });
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to create mechanic");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleDeleteMechanic = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this mechanic?")) return;
+    try {
+      await managerService.deleteMechanic(id);
+      setSuccess("Mechanic deleted successfully!");
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      setError("Failed to delete mechanic");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
   // Complaint Management Functions (NEW)
   const openComplaintModal = (complaint) => {
     setSelectedComplaint(complaint);
@@ -423,6 +464,17 @@ const ManagerDashboard = () => {
         >
           📦 Inventory
         </button>
+
+        {/* ✅ FIX: Added the Mechanics tab button */}
+        <button
+          className={`btn ${
+            activeTab === "mechanics" ? "btn-primary" : "btn-secondary"
+          }`}
+          onClick={() => setActiveTab("mechanics")}
+        >
+          👨‍🔧 Mechanics
+        </button>
+
         <button
           className={`btn ${
             activeTab === "feedback" ? "btn-primary" : "btn-secondary"
@@ -1020,6 +1072,64 @@ const ManagerDashboard = () => {
       {/* Reports Tab */}
       {activeTab === "reports" && <Reports />}
 
+      {/* ✅ FIX: Added the Mechanics tab content */}
+      {activeTab === "mechanics" && (
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <h3 className="card-header" style={{ marginBottom: 0 }}>
+              Mechanic Management
+            </h3>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowMechanicModal(true)}
+            >
+              ➕ Add Mechanic
+            </button>
+          </div>
+
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "2rem" }}>Loading...</p>
+          ) : mechanics.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+              No mechanics yet
+            </p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mechanics.map((mechanic) => (
+                  <tr key={mechanic._id}>
+                    <td>{mechanic.name}</td>
+                    <td>{mechanic.email}</td>
+                    <td>
+                      <button
+                        className="btn btn-danger btn-small"
+                        onClick={() => handleDeleteMechanic(mechanic._id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Inventory Modal */}
       {showInventoryModal && (
         <div className="modal-overlay" onClick={closeInventoryModal}>
@@ -1506,6 +1616,81 @@ Please prepare this order for pickup/delivery.`}
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showMechanicModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowMechanicModal(false)}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <span
+              className="modal-close"
+              onClick={() => setShowMechanicModal(false)}
+            >
+              ×
+            </span>
+            <h3>➕ Add New Mechanic</h3>
+
+            <form onSubmit={handleCreateMechanic}>
+              <div className="form-group">
+                <label>Name *</label>
+                <input
+                  type="text"
+                  value={mechanicForm.name}
+                  onChange={(e) =>
+                    setMechanicForm({ ...mechanicForm, name: e.target.value })
+                  }
+                  required
+                  placeholder="Enter mechanic name"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={mechanicForm.email}
+                  onChange={(e) =>
+                    setMechanicForm({ ...mechanicForm, email: e.target.value })
+                  }
+                  required
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={mechanicForm.password}
+                  onChange={(e) =>
+                    setMechanicForm({
+                      ...mechanicForm,
+                      password: e.target.value,
+                    })
+                  }
+                  required
+                  minLength="6"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <button type="submit" className="btn btn-primary">
+                  ✅ Create Mechanic
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowMechanicModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

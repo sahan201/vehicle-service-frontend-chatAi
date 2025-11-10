@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -29,7 +28,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -65,19 +63,20 @@ export const appointmentService = {
 
 // Manager Services
 export const managerService = {
-  getUnassignedJobs: () => api.get('/manager/appointments/unassigned'),
-  assignJob: (id, mechanicId) => api.put(`/manager/appointments/${id}/assign`, { mechanicId }),
+  getUnassignedJobs: () => api.get('/manager/jobs/unassigned'),
+  assignJob: (id, mechanicId) => api.put(`/manager/jobs/assign/${id}`, { mechanicId }),
   getMechanics: () => api.get('/manager/mechanics'),
-  getDashboardStats: () => api.get('/manager/stats'),
   createMechanic: (data) => api.post('/manager/mechanics', data),
+  deleteMechanic: (id) => api.delete(`/manager/mechanics/${id}`),
+  getDashboardStats: () => api.get('/manager/stats'),
 };
 
 // Mechanic Services
 export const mechanicService = {
   getMyJobs: () => api.get('/mechanic/jobs'),
   getMechanicStats: () => api.get('/mechanic/stats'),
-  startJob: (id) => api.put(`/mechanic/jobs/${id}/start`),
-  finishJob: (id) => api.put(`/mechanic/jobs/${id}/complete`),
+  startJob: (id) => api.put(`/mechanic/jobs/start/${id}`),
+  finishJob: (id) => api.put(`/mechanic/jobs/finish/${id}`),
   addParts: (id, data) => api.post(`/mechanic/jobs/${id}/parts`, data),
   addLabor: (id, data) => api.post(`/mechanic/jobs/${id}/labor`, data),
 };
@@ -98,7 +97,7 @@ export const inventoryService = {
   update: (id, data) => api.put(`/inventory/${id}`, data),
   delete: (id) => api.delete(`/inventory/${id}`),
   getLowStock: () => api.get('/inventory/low-stock'),
-  sendOrder: (id, data) => api.post(`/inventory/${id}/order`, data), // NEW
+  sendOrder: (id, data) => api.post(`/inventory/${id}/order`, data),
 };
 
 // Complaint Services

@@ -1,348 +1,955 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { mechanicService, inventoryService } from '../services/api';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import {
+  appointmentService,
+  managerService,
+  inventoryService,
+  feedbackService,
+  complaintService,
+} from "../services/api";
+import Reports from "./Reports";
 
-const MechanicDashboard = () => {
+const ManagerDashboard = () => {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState([]);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [appointments, setAppointments] = useState([]);
+  const [unassignedJobs, setUnassignedJobs] = useState([]);
+  const [mechanics, setMechanics] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [complaintStats, setComplaintStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [showPartsModal, setShowPartsModal] = useState(false);
-  const [showLaborModal, setShowLaborModal] = useState(false);
-  const [partsData, setPartsData] = useState({
-    inventoryItemId: '',
-    quantity: 1
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Mechanic Form State
+  const [mechanicForm, setMechanicForm] = useState({
+    name: '',
+    email: '',
+    password: ''
   });
-  const [laborData, setLaborData] = useState({
-    description: '',
-    cost: 0
+  const [showMechanicModal, setShowMechanicModal] = useState(false);
+
+  // Inventory Modal State
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [inventoryForm, setInventoryForm] = useState({
+    name: "",
+    partNumber: "",
+    supplier: "",
+    quantity: 0,
+    unit: "units",
+    costPrice: 0,
+    salePrice: 0,
+    lowStockThreshold: 5,
   });
+
+  // Order Modal State
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedOrderItem, setSelectedOrderItem] = useState(null);
+  const [orderForm, setOrderForm] = useState({
+    orderQuantity: 0,
+    phoneNumber: "",
+  });
+
+  // Complaint Response Modal State
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [complaintResponse, setComplaintResponse] = useState({
+    status: "",
+    response: "",
+    priority: "",
+  });
+
   const [stats, setStats] = useState({
-    total: 0,
+    totalAppointments: 0,
     scheduled: 0,
     inProgress: 0,
-    completed: 0
+    completed: 0,
   });
 
   useEffect(() => {
-    fetchJobs();
-    fetchInventory();
-  }, []);
+    fetchData();
+  }, [activeTab]);
 
-  const fetchJobs = async () => {
+  const fetchData = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const response = await mechanicService.getMyJobs();
-      const myJobs = response.data.jobs || response.data.appointments || [];
-      setJobs(myJobs);
-      
-      setStats({
-        total: myJobs.length,
-        scheduled: myJobs.filter(j => j.status === 'Scheduled').length,
-        inProgress: myJobs.filter(j => j.status === 'In Progress').length,
-        completed: myJobs.filter(j => j.status === 'Completed').length
-      });
-      
+      if (activeTab === "overview" || activeTab === "appointments") {
+        const apptResponse = await appointmentService.getAll();
+        const appts = apptResponse.data.appointments || [];
+        setAppointments(appts);
+
+        setStats({
+          totalAppointments: appts.length,
+          scheduled: appts.filter((a) => a.status === "Scheduled").length,
+          inProgress: appts.filter((a) => a.status === "In Progress").length,
+          completed: appts.filter((a) => a.status === "Completed").length,
+        });
+      }
+
+      if (activeTab === "assign") {
+        const [jobsRes, mechanicsRes] = await Promise.all([
+          managerService.getUnassignedJobs(),
+          managerService.getMechanics(),
+        ]);
+        setUnassignedJobs(jobsRes.data.appointments || jobsRes.data.jobs || []);
+        setMechanics(mechanicsRes.data.mechanics || []);
+      }
+
+      if (activeTab === "mechanics") {
+        const mechanicsRes = await managerService.getMechanics();
+        setMechanics(mechanicsRes.data.mechanics || []);
+      }
+
+      if (activeTab === "inventory") {
+        const invRes = await inventoryService.getAll();
+        setInventory(invRes.data.items || invRes.data.inventory || []);
+      }
+
+      if (activeTab === "feedback") {
+        const feedRes = await feedbackService.getAll();
+        setFeedback(feedRes.data.feedback || feedRes.data.feedbacks || []);
+      }
+
+      if (activeTab === "complaints") {
+        const [complaintsRes, statsRes] = await Promise.all([
+          complaintService.getAll(),
+          complaintService.getStats(),
+        ]);
+        setComplaints(complaintsRes.data.complaints || []);
+        setComplaintStats(statsRes.data.stats || null);
+      }
+
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      setError('Failed to load jobs');
+      console.error("Error fetching data:", error);
+      setError(error.response?.data?.message || "Failed to load data");
       setLoading(false);
     }
   };
 
-  const fetchInventory = async () => {
+  const handleAssignJob = async (jobId, mechanicId) => {
     try {
-      const response = await inventoryService.getAll();
-      setInventory(response.data.items || response.data.inventory || []);
+      await managerService.assignJob(jobId, mechanicId);
+      setSuccess("Job assigned successfully!");
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      console.error('Error fetching inventory:', error);
+      setError(error.response?.data?.message || "Failed to assign job");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
-  const handleStartJob = async (id) => {
-    try {
-      await mechanicService.startJob(id);
-      setSuccess('Job started successfully!');
-      fetchJobs();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError('Failed to start job');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
+  // Mechanic Management Functions
+  const handleCreateMechanic = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
-  const handleFinishJob = async (id) => {
-    if (!window.confirm('Are you sure you want to mark this job as finished?')) {
+    if (!mechanicForm.name || !mechanicForm.email || !mechanicForm.password) {
+      setError("Please fill in all fields");
+      setTimeout(() => setError(""), 3000);
       return;
     }
+
+    try {
+      await managerService.createMechanic(mechanicForm);
+      setSuccess('Mechanic created successfully!');
+      setShowMechanicModal(false);
+      setMechanicForm({ name: '', email: '', password: '' });
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to create mechanic');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteMechanic = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this mechanic?')) return;
     
     try {
-      await mechanicService.finishJob(id);
-      setSuccess('Job completed successfully!');
-      fetchJobs();
+      await managerService.deleteMechanic(id);
+      setSuccess('Mechanic deleted successfully!');
+      fetchData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError('Failed to complete job');
+      setError(error.response?.data?.message || 'Failed to delete mechanic');
       setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handleAddParts = async (e) => {
-    e.preventDefault();
+  // Inventory Modal Functions
+  const openInventoryModal = (item = null) => {
+    if (item) {
+      setEditingItem(item);
+      setInventoryForm({
+        name: item.name,
+        partNumber: item.partNumber || "",
+        supplier: item.supplier || "",
+        quantity: item.quantity,
+        unit: item.unit,
+        costPrice: item.costPrice,
+        salePrice: item.salePrice,
+        lowStockThreshold: item.lowStockThreshold,
+      });
+    } else {
+      setEditingItem(null);
+      setInventoryForm({
+        name: "",
+        partNumber: "",
+        supplier: "",
+        quantity: 0,
+        unit: "units",
+        costPrice: 0,
+        salePrice: 0,
+        lowStockThreshold: 5,
+      });
+    }
+    setShowInventoryModal(true);
+  };
+
+  const closeInventoryModal = () => {
+    setShowInventoryModal(false);
+    setEditingItem(null);
+  };
+
+  const handleInventorySubmit = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!inventoryForm.name || !inventoryForm.costPrice || !inventoryForm.salePrice) {
+      setError("Please fill in all required fields");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
     try {
-      await mechanicService.addParts(selectedJob._id, partsData);
-      setSuccess('Parts added successfully!');
-      setShowPartsModal(false);
-      setPartsData({ inventoryItemId: '', quantity: 1 });
-      fetchJobs();
-      fetchInventory(); // Refresh inventory after adding parts
-      setTimeout(() => setSuccess(''), 3000);
+      if (editingItem) {
+        await inventoryService.update(editingItem._id, inventoryForm);
+        setSuccess("Item updated successfully!");
+      } else {
+        await inventoryService.create(inventoryForm);
+        setSuccess("Item added successfully!");
+      }
+
+      closeInventoryModal();
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to add parts');
-      setTimeout(() => setError(''), 3000);
+      setError(error.response?.data?.message || "Failed to save item");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
-  const handleAddLabor = async (e) => {
-    e.preventDefault();
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) {
+      return;
+    }
+
     try {
-      await mechanicService.addLabor(selectedJob._id, laborData);
-      setSuccess('Labor charges added successfully!');
-      setShowLaborModal(false);
-      setLaborData({ description: '', cost: 0 });
-      fetchJobs();
-      setTimeout(() => setSuccess(''), 3000);
+      await inventoryService.delete(id);
+      setSuccess("Item deleted successfully!");
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      setError('Failed to add labor charges');
-      setTimeout(() => setError(''), 3000);
+      setError("Failed to delete item");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  // Order Modal Functions
+  const openOrderModal = (item) => {
+    setSelectedOrderItem(item);
+    setOrderForm({
+      orderQuantity: item.lowStockThreshold * 2,
+      phoneNumber: "",
+    });
+    setShowOrderModal(true);
+  };
+
+  const closeOrderModal = () => {
+    setShowOrderModal(false);
+    setSelectedOrderItem(null);
+  };
+
+  const handleSendOrder = async () => {
+    if (!orderForm.phoneNumber || !orderForm.phoneNumber.startsWith("+")) {
+      setError("Phone number must start with + (e.g., +94771234567)");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    if (orderForm.orderQuantity <= 0) {
+      setError("Order quantity must be greater than 0");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    try {
+      const response = await inventoryService.sendOrder(selectedOrderItem._id, orderForm);
+      setSuccess(`Order SMS sent successfully! Order ID: ${response.data.orderId}`);
+      closeOrderModal();
+      setTimeout(() => setSuccess(""), 5000);
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to send order SMS");
+      setTimeout(() => setError(""), 5000);
+    }
+  };
+
+  // Complaint Management Functions
+  const openComplaintModal = (complaint) => {
+    setSelectedComplaint(complaint);
+    setComplaintResponse({
+      status: complaint.status,
+      response: complaint.response || "",
+      priority: complaint.priority,
+    });
+    setShowComplaintModal(true);
+  };
+
+  const closeComplaintModal = () => {
+    setShowComplaintModal(false);
+    setSelectedComplaint(null);
+  };
+
+  const handleComplaintUpdate = async () => {
+    if (!complaintResponse.response && complaintResponse.status === selectedComplaint.status) {
+      setError("Please add a response or change the status");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    try {
+      await complaintService.update(selectedComplaint._id, complaintResponse);
+      setSuccess("Complaint updated successfully! Customer will be notified.");
+      closeComplaintModal();
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      setError("Failed to update complaint");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleDeleteComplaint = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this complaint?")) {
+      return;
+    }
+
+    try {
+      await complaintService.delete(id);
+      setSuccess("Complaint deleted successfully!");
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      setError("Failed to delete complaint");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const getStatusBadge = (status) => {
     const badges = {
-      'Scheduled': 'badge-info',
-      'In Progress': 'badge-warning',
-      'Completed': 'badge-success',
-      'Cancelled': 'badge-danger'
+      Scheduled: "badge-info",
+      "In Progress": "badge-warning",
+      Completed: "badge-success",
+      Cancelled: "badge-danger",
     };
-    return badges[status] || 'badge-info';
+    return badges[status] || "badge-info";
   };
 
-  const openPartsModal = (job) => {
-    setSelectedJob(job);
-    setShowPartsModal(true);
-  };
-
-  const openLaborModal = (job) => {
-    setSelectedJob(job);
-    setShowLaborModal(true);
-  };
-
-  const getSelectedPartDetails = () => {
-    const item = inventory.find(i => i._id === partsData.inventoryItemId);
-    if (!item) return null;
-    return {
-      name: item.name || item.partName,
-      price: item.salePrice || item.price,
-      available: item.quantity
+  const getComplaintStatusBadge = (status) => {
+    const badges = {
+      Open: "badge-warning",
+      "In Review": "badge-info",
+      Resolved: "badge-success",
+      Closed: "badge-danger",
     };
+    return badges[status] || "badge-info";
   };
 
-  if (loading) return <div className="loading">Loading jobs...</div>;
+  const getPriorityBadge = (priority) => {
+    const badges = {
+      Low: "badge-info",
+      Medium: "badge-warning",
+      High: "badge-danger",
+      Urgent: "badge-danger",
+    };
+    return badges[priority] || "badge-info";
+  };
+
+  if (loading && activeTab === "overview") {
+    return <div className="loading">Loading dashboard...</div>;
+  }
 
   return (
     <div className="container dashboard">
       <div className="dashboard-header">
-        <h2>Mechanic Dashboard 👨‍🔧</h2>
+        <h2>Manager Dashboard 👨‍💼</h2>
         <p>Welcome back, {user.name}</p>
       </div>
 
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Stats */}
-      <div className="stats">
-        <div className="stat-card">
-          <h3>{stats.total}</h3>
-          <p>Total Jobs</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.scheduled}</h3>
-          <p>Scheduled</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.inProgress}</h3>
-          <p>In Progress</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.completed}</h3>
-          <p>Completed</p>
-        </div>
+      {/* Tabs */}
+      <div style={{ marginBottom: "2rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button
+          className={`btn ${activeTab === "overview" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("overview")}
+        >
+          📊 Overview
+        </button>
+        <button
+          className={`btn ${activeTab === "appointments" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("appointments")}
+        >
+          📋 All Appointments
+        </button>
+        <button
+          className={`btn ${activeTab === "assign" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("assign")}
+        >
+          🔧 Assign Jobs
+        </button>
+        <button
+          className={`btn ${activeTab === "mechanics" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("mechanics")}
+        >
+          👨‍🔧 Mechanics
+        </button>
+        <button
+          className={`btn ${activeTab === "inventory" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("inventory")}
+        >
+          📦 Inventory
+        </button>
+        <button
+          className={`btn ${activeTab === "feedback" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("feedback")}
+        >
+          ⭐ Feedback
+        </button>
+        <button
+          className={`btn ${activeTab === "reports" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("reports")}
+        >
+          📊 Reports
+        </button>
+        <button
+          className={`btn ${activeTab === "complaints" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveTab("complaints")}
+        >
+          📝 Complaints
+          {complaintStats && complaintStats.byStatus?.open > 0 && (
+            <span style={{ marginLeft: "0.5rem", background: "#f39c12", color: "white", padding: "0.2rem 0.5rem", borderRadius: "10px", fontSize: "0.8rem" }}>
+              {complaintStats.byStatus.open}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Jobs List */}
-      <div className="card">
-        <h3 className="card-header">My Jobs</h3>
-        
-        {jobs.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666', padding: '3rem' }}>
-            No jobs assigned yet
-          </p>
-        ) : (
-          <div className="grid grid-2">
-            {jobs.map((job) => (
-              <div key={job._id} className="card" style={{ background: '#f8f9fa' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                  <h3 style={{ color: '#667eea', margin: 0 }}>
+      {/* Overview Tab */}
+      {activeTab === "overview" && (
+        <>
+          <div className="stats">
+            <div className="stat-card">
+              <h3>{stats.totalAppointments}</h3>
+              <p>Total Appointments</p>
+            </div>
+            <div className="stat-card">
+              <h3>{stats.scheduled}</h3>
+              <p>Scheduled</p>
+            </div>
+            <div className="stat-card">
+              <h3>{stats.inProgress}</h3>
+              <p>In Progress</p>
+            </div>
+            <div className="stat-card">
+              <h3>{stats.completed}</h3>
+              <p>Completed</p>
+            </div>
+          </div>
+
+          <div className="card">
+            <h3 className="card-header">Recent Appointments</h3>
+            {appointments.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+                No appointments yet
+              </p>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Service</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Mechanic</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appointments.slice(0, 10).map((apt) => (
+                    <tr key={apt._id}>
+                      <td>{apt.customer?.name}</td>
+                      <td>
+                        {apt.vehicle?.make} {apt.vehicle?.model}
+                        <br />
+                        <small>{apt.vehicle?.vehicleNo}</small>
+                      </td>
+                      <td>{apt.serviceType}</td>
+                      <td>
+                        {apt.date}
+                        <br />
+                        <small>{apt.time}</small>
+                      </td>
+                      <td>
+                        <span className={`badge ${getStatusBadge(apt.status)}`}>
+                          {apt.status}
+                        </span>
+                      </td>
+                      <td>{apt.assignedMechanic?.name || "Unassigned"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Appointments Tab */}
+      {activeTab === "appointments" && (
+        <div className="card">
+          <h3 className="card-header">All Appointments</h3>
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "2rem" }}>Loading...</p>
+          ) : appointments.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+              No appointments found
+            </p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Customer</th>
+                  <th>Vehicle</th>
+                  <th>Service</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                  <th>Mechanic</th>
+                  <th>Discount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((apt) => (
+                  <tr key={apt._id}>
+                    <td>
+                      <small>{apt._id.substring(0, 8)}</small>
+                    </td>
+                    <td>{apt.customer?.name}</td>
+                    <td>
+                      {apt.vehicle?.make} {apt.vehicle?.model}
+                      <br />
+                      <small>{apt.vehicle?.vehicleNo}</small>
+                    </td>
+                    <td>{apt.serviceType}</td>
+                    <td>
+                      {apt.date}
+                      <br />
+                      <small>{apt.time}</small>
+                    </td>
+                    <td>
+                      <span className={`badge ${getStatusBadge(apt.status)}`}>
+                        {apt.status}
+                      </span>
+                    </td>
+                    <td>{apt.assignedMechanic?.name || "-"}</td>
+                    <td>
+                      {apt.discountEligible ? (
+                        <span className="badge badge-success">5%</span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Assign Jobs Tab */}
+      {activeTab === "assign" && (
+        <div className="card">
+          <h3 className="card-header">Assign Unassigned Jobs</h3>
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "2rem" }}>Loading...</p>
+          ) : unassignedJobs.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+              No unassigned jobs
+            </p>
+          ) : (
+            <div className="grid grid-2">
+              {unassignedJobs.map((job) => (
+                <div key={job._id} className="card" style={{ background: "#f8f9fa" }}>
+                  <h3 style={{ color: "#667eea", marginBottom: "1rem" }}>
                     {job.serviceType}
                   </h3>
-                  <span className={`badge ${getStatusBadge(job.status)}`}>
-                    {job.status}
-                  </span>
-                </div>
+                  <p>
+                    <strong>Customer:</strong> {job.customer?.name}
+                  </p>
+                  <p>
+                    <strong>Vehicle:</strong> {job.vehicle?.make} {job.vehicle?.model} ({job.vehicle?.vehicleNo})
+                  </p>
+                  <p>
+                    <strong>Date:</strong> {job.date} at {job.time}
+                  </p>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <p><strong>👤 Customer:</strong> {job.customer?.name}</p>
-                  <p><strong>🚗 Vehicle:</strong> {job.vehicle?.make} {job.vehicle?.model}</p>
-                  <p><strong>🔢 Reg No:</strong> {job.vehicle?.vehicleNo}</p>
-                  <p><strong>📅 Date:</strong> {job.date}</p>
-                  <p><strong>🕐 Time:</strong> {job.time}</p>
-                  
-                  {job.notes && (
-                    <p style={{ marginTop: '0.5rem' }}>
-                      <strong>📝 Notes:</strong><br />
-                      <small>{job.notes}</small>
-                    </p>
-                  )}
-
-                  {job.partsUsed && job.partsUsed.length > 0 && (
-                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#fff', borderRadius: '5px' }}>
-                      <strong>Parts Used:</strong>
-                      {job.partsUsed.map((part, idx) => (
-                        <div key={idx} style={{ fontSize: '0.85rem', color: '#666' }}>
-                          • {part.name} (x{part.quantity}) - Rs. {part.salePrice * part.quantity}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {job.laborItems && job.laborItems.length > 0 && (
-                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#fff', borderRadius: '5px' }}>
-                      <strong>Labor:</strong>
-                      {job.laborItems.map((labor, idx) => (
-                        <div key={idx} style={{ fontSize: '0.85rem', color: '#666' }}>
-                          • {labor.description} - Rs. {labor.cost}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {job.status === 'Scheduled' && (
-                    <button 
-                      className="btn btn-success btn-small"
-                      onClick={() => handleStartJob(job._id)}
+                  <div className="form-group" style={{ marginTop: "1rem" }}>
+                    <label>Assign to Mechanic:</label>
+                    <select
+                      onChange={(e) => e.target.value && handleAssignJob(job._id, e.target.value)}
+                      defaultValue=""
                     >
-                      ▶️ Start Job
-                    </button>
-                  )}
-
-                  {job.status === 'In Progress' && (
-                    <>
-                      <button 
-                        className="btn btn-primary btn-small"
-                        onClick={() => openPartsModal(job)}
-                      >
-                        🔧 Add Parts
-                      </button>
-                      <button 
-                        className="btn btn-primary btn-small"
-                        onClick={() => openLaborModal(job)}
-                      >
-                        ⏱️ Add Labor
-                      </button>
-                      <button 
-                        className="btn btn-success btn-small"
-                        onClick={() => handleFinishJob(job._id)}
-                      >
-                        ✅ Finish Job
-                      </button>
-                    </>
-                  )}
+                      <option value="">Select mechanic</option>
+                      {mechanics.map((mech) => (
+                        <option key={mech._id} value={mech._id}>
+                          {mech.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-                <small style={{ display: 'block', marginTop: '1rem', color: '#999' }}>
-                  Assigned: {new Date(job.createdAt).toLocaleDateString()}
-                </small>
-              </div>
-            ))}
+      {/* Mechanics Tab */}
+      {activeTab === "mechanics" && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 className="card-header" style={{ marginBottom: 0 }}>Mechanic Management</h3>
+            <button className="btn btn-primary" onClick={() => setShowMechanicModal(true)}>
+              ➕ Add Mechanic
+            </button>
           </div>
-        )}
-      </div>
 
-      {/* Add Parts Modal */}
-      {showPartsModal && (
-        <div className="modal-overlay" onClick={() => setShowPartsModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <span className="modal-close" onClick={() => setShowPartsModal(false)}>×</span>
-            <h3>Add Parts from Inventory</h3>
-            
-            <form onSubmit={handleAddParts}>
-              <div className="form-group">
-                <label>Select Part from Inventory</label>
-                <select
-                  value={partsData.inventoryItemId}
-                  onChange={(e) => setPartsData({...partsData, inventoryItemId: e.target.value})}
-                  required
-                >
-                  <option value="">Choose a part...</option>
-                  {inventory.map((item) => (
-                    <option key={item._id} value={item._id}>
-                      {item.name || item.partName} - Rs. {item.salePrice || item.price} (Stock: {item.quantity})
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {loading ? (
+            <p style={{ textAlign: 'center', padding: '2rem' }}>Loading...</p>
+          ) : mechanics.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+              <h3>No mechanics yet</h3>
+              <p>Add your first mechanic to get started</p>
+              <button className="btn btn-primary" onClick={() => setShowMechanicModal(true)} style={{ marginTop: '1rem' }}>
+                Add First Mechanic
+              </button>
+            </div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mechanics.map((mechanic) => (
+                  <tr key={mechanic._id}>
+                    <td>{mechanic.name}</td>
+                    <td>{mechanic.email}</td>
+                    <td>
+                      <button
+                        className="btn btn-danger btn-small"
+                        onClick={() => handleDeleteMechanic(mechanic._id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
-              {getSelectedPartDetails() && (
-                <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '5px', marginBottom: '1rem' }}>
-                  <p><strong>Part:</strong> {getSelectedPartDetails().name}</p>
-                  <p><strong>Price:</strong> Rs. {getSelectedPartDetails().price}</p>
-                  <p><strong>Available:</strong> {getSelectedPartDetails().available} units</p>
+      {/* Inventory Tab */}
+      {activeTab === "inventory" && (
+        <div className="card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h3 className="card-header" style={{ marginBottom: 0 }}>
+              Inventory Management
+            </h3>
+            <button className="btn btn-primary" onClick={() => openInventoryModal()}>
+              ➕ Add New Item
+            </button>
+          </div>
+
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "2rem" }}>Loading inventory...</p>
+          ) : inventory.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "3rem", color: "#666" }}>
+              <h3>No inventory items yet</h3>
+              <p>Start by adding your first inventory item</p>
+              <button className="btn btn-primary" onClick={() => openInventoryModal()} style={{ marginTop: "1rem" }}>
+                Add First Item
+              </button>
+            </div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Part Name</th>
+                  <th>Part Number</th>
+                  <th>Quantity</th>
+                  <th>Cost Price</th>
+                  <th>Sale Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.map((item) => (
+                  <tr key={item._id}>
+                    <td>
+                      <strong>{item.name}</strong>
+                      {item.supplier && (
+                        <>
+                          <br />
+                          <small style={{ color: "#666" }}>Supplier: {item.supplier}</small>
+                        </>
+                      )}
+                    </td>
+                    <td>{item.partNumber || "-"}</td>
+                    <td>
+                      {item.quantity} {item.unit}
+                      {item.quantity <= item.lowStockThreshold && (
+                        <>
+                          <br />
+                          <small style={{ color: "#f39c12" }}>⚠️ Low Stock</small>
+                        </>
+                      )}
+                    </td>
+                    <td>Rs. {item.costPrice.toFixed(2)}</td>
+                    <td>Rs. {item.salePrice.toFixed(2)}</td>
+                    <td>
+                      <span className={`badge ${item.quantity > item.lowStockThreshold ? "badge-success" : "badge-warning"}`}>
+                        {item.quantity > item.lowStockThreshold ? "In Stock" : "Low Stock"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <button className="btn btn-secondary btn-small" onClick={() => openInventoryModal(item)}>
+                          ✏️ Edit
+                        </button>
+                        <button className="btn btn-danger btn-small" onClick={() => handleDeleteItem(item._id)}>
+                          🗑️ Delete
+                        </button>
+                        {item.quantity <= item.lowStockThreshold && (
+                          <button className="btn btn-primary btn-small" onClick={() => openOrderModal(item)}>
+                            📱 Send Order
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Feedback Tab */}
+      {activeTab === "feedback" && (
+        <div className="card">
+          <h3 className="card-header">Customer Feedback</h3>
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "2rem" }}>Loading...</p>
+          ) : feedback.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+              No feedback yet
+            </p>
+          ) : (
+            <div className="grid grid-2">
+              {feedback.map((fb) => (
+                <div key={fb._id} className="card" style={{ background: "#f8f9fa" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                    <strong>{fb.customer?.name}</strong>
+                    <span style={{ color: "#f39c12" }}>
+                      {"⭐".repeat(fb.rating)}
+                    </span>
+                  </div>
+                  <p style={{ color: "#666", fontSize: "0.9rem" }}>
+                    {fb.comment}
+                  </p>
+                  {fb.appointment?.assignedMechanic && (
+                    <small style={{ color: "#999" }}>
+                      Mechanic: {fb.appointment.assignedMechanic.name}
+                    </small>
+                  )}
+                  <br />
+                  <small style={{ color: "#999" }}>
+                    {new Date(fb.createdAt).toLocaleDateString()}
+                  </small>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
+      {/* Complaints Tab */}
+      {activeTab === "complaints" && (
+        <>
+          {complaintStats && (
+            <div className="stats">
+              <div className="stat-card">
+                <h3>{complaintStats.total}</h3>
+                <p>Total Complaints</p>
+              </div>
+              <div className="stat-card">
+                <h3 style={{ color: "#f39c12" }}>{complaintStats.byStatus?.open || 0}</h3>
+                <p>Open</p>
+              </div>
+              <div className="stat-card">
+                <h3>{complaintStats.byStatus?.inReview || 0}</h3>
+                <p>In Review</p>
+              </div>
+              <div className="stat-card">
+                <h3 style={{ color: "#27ae60" }}>{complaintStats.byStatus?.resolved || 0}</h3>
+                <p>Resolved</p>
+              </div>
+            </div>
+          )}
+
+          <div className="card">
+            <h3 className="card-header">Customer Complaints</h3>
+            {loading ? (
+              <p style={{ textAlign: "center", padding: "2rem" }}>Loading...</p>
+            ) : complaints.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#666", padding: "2rem" }}>
+                No complaints yet
+              </p>
+            ) : (
+              <div className="grid grid-2">
+                {complaints.map((complaint) => (
+                  <div key={complaint._id} className="card" style={{ background: "#f8f9fa" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                      <strong style={{ color: "#667eea" }}>{complaint.subject}</strong>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <span className={`badge ${getPriorityBadge(complaint.priority)}`}>
+                          {complaint.priority}
+                        </span>
+                        <span className={`badge ${getComplaintStatusBadge(complaint.status)}`}>
+                          {complaint.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: "0.85rem", color: "#999", marginBottom: "0.5rem" }}>
+                      <strong>From:</strong> {complaint.customer?.name} ({complaint.customer?.email})
+                    </p>
+
+                    <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+                      {complaint.description}
+                    </p>
+
+                    {complaint.appointment && (
+                      <p style={{ fontSize: "0.85rem", color: "#999", marginBottom: "0.5rem" }}>
+                        <strong>Related to:</strong> {complaint.appointment.serviceType} on {complaint.appointment.date}
+                      </p>
+                    )}
+
+                    {complaint.response && (
+                      <div style={{ marginTop: "0.75rem", padding: "0.5rem", background: "#e7f3ff", borderLeft: "3px solid #667eea", borderRadius: "4px" }}>
+                        <strong style={{ fontSize: "0.85rem", color: "#667eea" }}>Your Response:</strong>
+                        <p style={{ fontSize: "0.85rem", color: "#555", margin: "0.25rem 0 0 0" }}>
+                          {complaint.response}
+                        </p>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #ddd" }}>
+                      <button className="btn btn-primary btn-small" onClick={() => openComplaintModal(complaint)}>
+                        {complaint.response ? "✏️ Update" : "📝 Respond"}
+                      </button>
+                      <button className="btn btn-danger btn-small" onClick={() => handleDeleteComplaint(complaint._id)}>
+                        🗑️ Delete
+                      </button>
+                    </div>
+
+                    <small style={{ display: "block", marginTop: "0.5rem", color: "#999" }}>
+                      Submitted: {new Date(complaint.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Reports Tab */}
+      {activeTab === "reports" && <Reports />}
+
+      {/* Mechanic Modal */}
+      {showMechanicModal && (
+        <div className="modal-overlay" onClick={() => setShowMechanicModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <span className="modal-close" onClick={() => setShowMechanicModal(false)}>×</span>
+            <h3>➕ Add New Mechanic</h3>
+            
+            <form onSubmit={handleCreateMechanic}>
               <div className="form-group">
-                <label>Quantity</label>
+                <label>Name *</label>
                 <input
-                  type="number"
-                  value={partsData.quantity}
-                  onChange={(e) => setPartsData({...partsData, quantity: parseInt(e.target.value)})}
+                  type="text"
+                  value={mechanicForm.name}
+                  onChange={(e) => setMechanicForm({...mechanicForm, name: e.target.value})}
                   required
-                  min="1"
-                  max={getSelectedPartDetails()?.available || 999}
+                  placeholder="Enter mechanic name"
                 />
               </div>
 
-              {getSelectedPartDetails() && (
-                <p style={{ color: '#666', marginBottom: '1rem' }}>
-                  <strong>Total Cost:</strong> Rs. {(partsData.quantity * getSelectedPartDetails().price).toFixed(2)}
-                </p>
-              )}
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={mechanicForm.email}
+                  onChange={(e) => setMechanicForm({...mechanicForm, email: e.target.value})}
+                  required
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={mechanicForm.password}
+                  onChange={(e) => setMechanicForm({...mechanicForm, password: e.target.value})}
+                  required
+                  minLength="6"
+                  placeholder="At least 6 characters"
+                />
+              </div>
 
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="btn btn-primary" disabled={!partsData.inventoryItemId}>
-                  Add Parts
+                <button type="submit" className="btn btn-primary">
+                  ✅ Create Mechanic
                 </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={() => setShowPartsModal(false)}
-                >
+                <button type="button" className="btn btn-secondary" onClick={() => setShowMechanicModal(false)}>
                   Cancel
                 </button>
               </div>
@@ -351,57 +958,248 @@ const MechanicDashboard = () => {
         </div>
       )}
 
-      {/* Add Labor Modal */}
-      {showLaborModal && (
-        <div className="modal-overlay" onClick={() => setShowLaborModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <span className="modal-close" onClick={() => setShowLaborModal(false)}>×</span>
-            <h3>Add Labor Charges</h3>
-            
-            <form onSubmit={handleAddLabor}>
+      {/* Inventory Modal */}
+      {showInventoryModal && (
+        <div className="modal-overlay" onClick={closeInventoryModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <span className="modal-close" onClick={closeInventoryModal}>×</span>
+            <h3 style={{ marginBottom: "1.5rem" }}>
+              {editingItem ? "✏️ Edit Inventory Item" : "➕ Add New Inventory Item"}
+            </h3>
+
+            <div>
               <div className="form-group">
-                <label>Description</label>
+                <label>Item Name *</label>
                 <input
                   type="text"
-                  value={laborData.description}
-                  onChange={(e) => setLaborData({...laborData, description: e.target.value})}
-                  required
-                  placeholder="e.g., Engine diagnosis and repair"
+                  value={inventoryForm.name}
+                  onChange={(e) => setInventoryForm({ ...inventoryForm, name: e.target.value })}
+                  placeholder="e.g., Engine Oil 5W-30, Brake Pads"
                 />
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Part Number</label>
+                  <input
+                    type="text"
+                    value={inventoryForm.partNumber}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, partNumber: e.target.value })}
+                    placeholder="e.g., BP-123"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Supplier</label>
+                  <input
+                    type="text"
+                    value={inventoryForm.supplier}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, supplier: e.target.value })}
+                    placeholder="e.g., ABC Parts Ltd"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Quantity *</label>
+                  <input
+                    type="number"
+                    value={inventoryForm.quantity}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, quantity: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Unit *</label>
+                  <select
+                    value={inventoryForm.unit}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, unit: e.target.value })}
+                  >
+                    <option value="units">Units</option>
+                    <option value="liters">Liters</option>
+                    <option value="pieces">Pieces</option>
+                    <option value="kg">Kilograms</option>
+                    <option value="sets">Sets</option>
+                    <option value="boxes">Boxes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Cost Price (Rs.) *</label>
+                  <input
+                    type="number"
+                    value={inventoryForm.costPrice}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, costPrice: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Sale Price (Rs.) *</label>
+                  <input
+                    type="number"
+                    value={inventoryForm.salePrice}
+                    onChange={(e) => setInventoryForm({ ...inventoryForm, salePrice: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label>Total Labor Cost (Rs.)</label>
+                <label>Low Stock Threshold *</label>
                 <input
                   type="number"
-                  value={laborData.cost}
-                  onChange={(e) => setLaborData({...laborData, cost: parseFloat(e.target.value)})}
-                  required
+                  value={inventoryForm.lowStockThreshold}
+                  onChange={(e) => setInventoryForm({ ...inventoryForm, lowStockThreshold: parseInt(e.target.value) || 5 })}
                   min="0"
-                  step="1"
-                  placeholder="Enter total labor cost"
+                  placeholder="5"
                 />
               </div>
 
-              <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '5px', marginBottom: '1rem' }}>
-                <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                  💡 Enter the total cost for this labor service. This could be based on hours worked, complexity, or flat rate.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="btn btn-primary">
-                  Add Labor
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <button className="btn btn-primary" onClick={handleInventorySubmit}>
+                  {editingItem ? "✅ Update Item" : "➕ Add Item"}
                 </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={() => setShowLaborModal(false)}
-                >
+                <button className="btn btn-secondary" onClick={closeInventoryModal}>
                   Cancel
                 </button>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order SMS Modal */}
+      {showOrderModal && selectedOrderItem && (
+        <div className="modal-overlay" onClick={closeOrderModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <span className="modal-close" onClick={closeOrderModal}>×</span>
+            <h3 style={{ marginBottom: "1.5rem" }}>📱 Send Inventory Order via SMS</h3>
+
+            <div style={{ background: "#f8f9fa", padding: "1rem", borderRadius: "5px", marginBottom: "1.5rem" }}>
+              <h4 style={{ color: "#667eea", marginBottom: "0.5rem" }}>{selectedOrderItem.name}</h4>
+              <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
+                <strong>Current Stock:</strong> {selectedOrderItem.quantity} {selectedOrderItem.unit}
+              </p>
+              <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
+                <strong>Low Stock Threshold:</strong> {selectedOrderItem.lowStockThreshold} {selectedOrderItem.unit}
+              </p>
+            </div>
+
+            <div>
+              <div className="form-group">
+                <label>Order Quantity *</label>
+                <input
+                  type="number"
+                  value={orderForm.orderQuantity}
+                  onChange={(e) => setOrderForm({ ...orderForm, orderQuantity: parseInt(e.target.value) || 0 })}
+                  min="1"
+                  placeholder="Enter quantity to order"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Hardware Store Phone Number *</label>
+                <input
+                  type="tel"
+                  value={orderForm.phoneNumber}
+                  onChange={(e) => setOrderForm({ ...orderForm, phoneNumber: e.target.value })}
+                  placeholder="+94771234567"
+                />
+                <small style={{ color: "#666", display: "block", marginTop: "0.25rem" }}>
+                  Must include country code (e.g., +94 for Sri Lanka)
+                </small>
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <button className="btn btn-primary" onClick={handleSendOrder}>
+                  📱 Send SMS Order
+                </button>
+                <button className="btn btn-secondary" onClick={closeOrderModal}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complaint Response Modal */}
+      {showComplaintModal && selectedComplaint && (
+        <div className="modal-overlay" onClick={closeComplaintModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <span className="modal-close" onClick={closeComplaintModal}>×</span>
+            <h3 style={{ marginBottom: "1.5rem" }}>📝 Respond to Complaint</h3>
+
+            <div style={{ background: "#f8f9fa", padding: "1rem", borderRadius: "5px", marginBottom: "1.5rem" }}>
+              <h4 style={{ color: "#667eea", marginBottom: "0.5rem" }}>{selectedComplaint.subject}</h4>
+              <p style={{ fontSize: "0.9rem", color: "#666" }}>{selectedComplaint.description}</p>
+              <p style={{ fontSize: "0.85rem", color: "#999", marginTop: "0.5rem" }}>
+                <strong>From:</strong> {selectedComplaint.customer?.name} ({selectedComplaint.customer?.email})
+              </p>
+            </div>
+
+            <div>
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={complaintResponse.status}
+                    onChange={(e) => setComplaintResponse({ ...complaintResponse, status: e.target.value })}
+                  >
+                    <option value="Open">Open</option>
+                    <option value="In Review">In Review</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={complaintResponse.priority}
+                    onChange={(e) => setComplaintResponse({ ...complaintResponse, priority: e.target.value })}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Your Response *</label>
+                <textarea
+                  value={complaintResponse.response}
+                  onChange={(e) => setComplaintResponse({ ...complaintResponse, response: e.target.value })}
+                  rows="6"
+                  placeholder="Type your response to the customer..."
+                />
+              </div>
+
+              <div className="alert alert-info" style={{ fontSize: "0.9rem" }}>
+                <strong>💡 Note:</strong> The customer will receive an email notification with your response.
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <button className="btn btn-primary" onClick={handleComplaintUpdate}>
+                  ✅ Send Response
+                </button>
+                <button className="btn btn-secondary" onClick={closeComplaintModal}>
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -409,4 +1207,4 @@ const MechanicDashboard = () => {
   );
 };
 
-export default MechanicDashboard;
+export default ManagerDashboard;
