@@ -61,7 +61,7 @@ const BookAppointment = () => {
 
     try {
       const response = await appointmentService.create(formData);
-      setSuccess("Appointment booked successfully! 🎉");
+      setSuccess("Appointment booked successfully!");
 
       setTimeout(() => {
         navigate("/customer/appointments");
@@ -96,7 +96,7 @@ const BookAppointment = () => {
   return (
     <div className="container" style={{ paddingTop: "2rem" }}>
       <div className="card">
-        <h2 className="card-header">📅 Book Service Appointment</h2>
+        <h2 className="card-header">Book Service Appointment</h2>
 
         {vehicles.length === 0 && (
           <div className="alert alert-info">
@@ -110,7 +110,7 @@ const BookAppointment = () => {
 
         {isOffPeak() && (
           <div className="alert alert-success">
-            🎉 Off-peak discount! You'll get 5% off by booking on a weekday!
+            Off-peak discount! You'll get 5% off by booking on a weekday!
           </div>
         )}
 

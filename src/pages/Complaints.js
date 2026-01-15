@@ -110,12 +110,12 @@ const Complaints = () => {
       {/* Header */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 className="card-header" style={{ marginBottom: 0 }}>📝 My Complaints</h2>
+          <h2 className="card-header" style={{ marginBottom: 0 }}>My Complaints</h2>
           <button 
             className="btn btn-primary"
             onClick={() => setShowForm(!showForm)}
           >
-            {showForm ? 'Cancel' : '➕ New Complaint'}
+            {showForm ? 'Cancel' : 'New Complaint'}
           </button>
         </div>
 
@@ -204,7 +204,7 @@ const Complaints = () => {
 
         {/* Info Box */}
         <div className="alert alert-info" style={{ marginBottom: '1.5rem' }}>
-          <strong>💡 Note:</strong> Your complaints will be reviewed by our management team. 
+          <strong>Note:</strong> Your complaints will be reviewed by our management team. 
           You'll receive updates via email and you can track the status here.
         </div>
       </div>

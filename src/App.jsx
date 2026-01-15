@@ -15,6 +15,7 @@ import MechanicDashboard from './pages/MechanicDashboard';
 import './styles/App.css';
 import Complaints from './pages/Complaints';
 import Reports from './pages/Reports';
+import VirtualAssistant from './components/Common/VirtualAssistant';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -52,7 +53,7 @@ function AppRoutes() {
           <ProtectedRoute allowedRoles={['Customer']}>
             <CustomerDashboard />
           </ProtectedRoute>
-        } />
+        } /> 
         <Route path="/customer/vehicles" element={
           <ProtectedRoute allowedRoles={['Customer']}>
             <Vehicles />
@@ -122,6 +123,7 @@ function AppRoutes() {
           user ? <Navigate to={`/${user.role.toLowerCase()}/dashboard`} /> : <Navigate to="/login" />
         } />
       </Routes>
+      <VirtualAssistant /> 
     </Router>
   );
 }

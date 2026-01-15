@@ -156,7 +156,7 @@ const MechanicDashboard = () => {
   return (
     <div className="container dashboard">
       <div className="dashboard-header">
-        <h2>Mechanic Dashboard 👨‍🔧</h2>
+        <h2>Mechanic Dashboard</h2>
         <p>Welcome back, {user.name}</p>
       </div>
 
@@ -213,7 +213,7 @@ const MechanicDashboard = () => {
                   
                   {job.notes && (
                     <p style={{ marginTop: '0.5rem' }}>
-                      <strong>📝 Notes:</strong><br />
+                      <strong>Notes:</strong><br />
                       <small>{job.notes}</small>
                     </p>
                   )}
@@ -247,7 +247,7 @@ const MechanicDashboard = () => {
                       className="btn btn-success btn-small"
                       onClick={() => handleStartJob(job._id)}
                     >
-                      ▶️ Start Job
+                      Start Job
                     </button>
                   )}
 
@@ -257,19 +257,19 @@ const MechanicDashboard = () => {
                         className="btn btn-primary btn-small"
                         onClick={() => openPartsModal(job)}
                       >
-                        🔧 Add Parts
+                        Add Parts
                       </button>
                       <button 
                         className="btn btn-primary btn-small"
                         onClick={() => openLaborModal(job)}
                       >
-                        ⏱️ Add Labor
+                        Add Labor
                       </button>
                       <button 
                         className="btn btn-success btn-small"
                         onClick={() => handleFinishJob(job._id)}
                       >
-                        ✅ Finish Job
+                        Finish Job
                       </button>
                     </>
                   )}
@@ -385,7 +385,7 @@ const MechanicDashboard = () => {
 
               <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '5px', marginBottom: '1rem' }}>
                 <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                  💡 Enter the total cost for this labor service. This could be based on hours worked, complexity, or flat rate.
+                  Enter the total cost for this labor service. This could be based on hours worked, complexity, or flat rate.
                 </p>
               </div>
 

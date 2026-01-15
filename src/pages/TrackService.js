@@ -322,7 +322,7 @@ const TrackService = () => {
         {/* Vehicle & Service Info */}
         <div className="card">
           <h3 style={{ color: "#667eea", marginBottom: "1rem" }}>
-            🚗 Service Details
+            Service Details
           </h3>
           <div style={{ lineHeight: "1.8" }}>
             <p>
@@ -353,7 +353,7 @@ const TrackService = () => {
                 className="alert alert-success"
                 style={{ marginTop: "1rem" }}
               >
-                🎉 5% Off-peak Discount Applied!
+                5% Off-peak Discount Applied!
               </div>
             )}
           </div>
@@ -362,7 +362,7 @@ const TrackService = () => {
         {/* Mechanic Info */}
         <div className="card">
           <h3 style={{ color: "#667eea", marginBottom: "1rem" }}>
-            👨‍🔧 Mechanic
+            Mechanic
           </h3>
           {appointment.assignedMechanic ? (
             <div style={{ lineHeight: "1.8" }}>
@@ -539,12 +539,12 @@ const TrackService = () => {
           )}
 
           <button className="btn btn-primary" onClick={fetchAppointment}>
-            🔄 Refresh Status
+          Refresh Status
           </button>
         </div>
 
         <p style={{ color: "#999", fontSize: "0.85rem", marginTop: "1rem" }}>
-          💡 This page auto-refreshes every 30 seconds to show the latest
+          This page auto-refreshes every 30 seconds to show the latest
           updates
         </p>
       </div>

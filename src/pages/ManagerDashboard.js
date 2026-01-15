@@ -375,7 +375,7 @@ const ManagerDashboard = () => {
   return (
     <div className="container dashboard">
       <div className="dashboard-header">
-        <h2>Manager Dashboard 👨‍💼</h2>
+        <h2>Manager Dashboard</h2>
         <p>Welcome back, {user.name}</p>
       </div>
 
@@ -397,7 +397,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("overview")}
         >
-          📊 Overview
+          Overview
         </button>
         <button
           className={`btn ${
@@ -405,7 +405,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("appointments")}
         >
-          📋 All Appointments
+          All Appointments
         </button>
         <button
           className={`btn ${
@@ -413,7 +413,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("assign")}
         >
-          🔧 Assign Jobs
+          Assign Jobs
         </button>
         <button
           className={`btn ${
@@ -421,7 +421,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("inventory")}
         >
-          📦 Inventory
+          Inventory
         </button>
         <button
           className={`btn ${
@@ -429,7 +429,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("feedback")}
         >
-          ⭐ Feedback
+          Feedback
         </button>
         <button
           className={`btn ${
@@ -437,7 +437,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("reports")}
         >
-          📊 Reports
+          Reports
         </button>
         <button
           className={`btn ${
@@ -445,7 +445,7 @@ const ManagerDashboard = () => {
           }`}
           onClick={() => setActiveTab("complaints")}
         >
-          📝 Complaints
+          Complaints
           {complaintStats && complaintStats.byStatus.open > 0 && (
             <span
               style={{
@@ -761,14 +761,14 @@ const ManagerDashboard = () => {
                           onClick={() => openInventoryModal(item)}
                           title="Edit"
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                         <button
                           className="btn btn-danger btn-small"
                           onClick={() => handleDeleteItem(item._id)}
                           title="Delete"
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                         {item.quantity <= item.lowStockThreshold && (
                           <button
@@ -776,7 +776,7 @@ const ManagerDashboard = () => {
                             onClick={() => openOrderModal(item)}
                             title="Send Order"
                           >
-                            📱 Send Order
+                            Send Order
                           </button>
                         )}
                       </div>
@@ -816,7 +816,7 @@ const ManagerDashboard = () => {
                   >
                     <strong>{fb.customer?.name}</strong>
                     <span style={{ color: "#f39c12" }}>
-                      {"⭐".repeat(fb.rating)}
+                      {"".repeat(fb.rating)}
                     </span>
                   </div>
                   <p style={{ color: "#666", fontSize: "0.9rem" }}>
@@ -989,13 +989,13 @@ const ManagerDashboard = () => {
                         className="btn btn-primary btn-small"
                         onClick={() => openComplaintModal(complaint)}
                       >
-                        {complaint.response ? "✏️ Update" : "📝 Respond"}
+                        {complaint.response ? "Update" : " Respond"}
                       </button>
                       <button
                         className="btn btn-danger btn-small"
                         onClick={() => handleDeleteComplaint(complaint._id)}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </div>
 
@@ -1033,8 +1033,8 @@ const ManagerDashboard = () => {
             </span>
             <h3 style={{ marginBottom: "1.5rem" }}>
               {editingItem
-                ? "✏️ Edit Inventory Item"
-                : "➕ Add New Inventory Item"}
+                ? "Edit Inventory Item"
+                : "Add New Inventory Item"}
             </h3>
 
             <div>
@@ -1223,7 +1223,7 @@ const ManagerDashboard = () => {
                   className="btn btn-primary"
                   onClick={handleInventorySubmit}
                 >
-                  {editingItem ? "✅ Update Item" : "➕ Add Item"}
+                  {editingItem ? "Update Item" : "Add Item"}
                 </button>
                 <button
                   className="btn btn-secondary"
@@ -1248,7 +1248,7 @@ const ManagerDashboard = () => {
             <span className="modal-close" onClick={closeComplaintModal}>
               ×
             </span>
-            <h3 style={{ marginBottom: "1.5rem" }}>📝 Respond to Complaint</h3>
+            <h3 style={{ marginBottom: "1.5rem" }}>Respond to Complaint</h3>
 
             {/* Complaint Details */}
             <div
@@ -1332,7 +1332,7 @@ const ManagerDashboard = () => {
               </div>
 
               <div className="alert alert-info" style={{ fontSize: "0.9rem" }}>
-                <strong>💡 Note:</strong> The customer will receive an email
+                <strong>Note:</strong> The customer will receive an email
                 notification with your response.
               </div>
 
@@ -1341,7 +1341,7 @@ const ManagerDashboard = () => {
                   className="btn btn-primary"
                   onClick={handleComplaintUpdate}
                 >
-                  ✅ Send Response
+                  Send Response
                 </button>
                 <button
                   className="btn btn-secondary"
@@ -1367,7 +1367,7 @@ const ManagerDashboard = () => {
               ×
             </span>
             <h3 style={{ marginBottom: "1.5rem" }}>
-              📱 Send Inventory Order via SMS
+              Send Inventory Order via SMS
             </h3>
 
             {/* Item Details */}
@@ -1474,7 +1474,7 @@ const ManagerDashboard = () => {
                 className="alert alert-info"
                 style={{ fontSize: "0.9rem", marginBottom: "1rem" }}
               >
-                <strong>📱 SMS Preview:</strong>
+                <strong>SMS Preview:</strong>
                 <br />
                 <div
                   style={{
@@ -1499,7 +1499,7 @@ Please prepare this order for pickup/delivery.`}
 
               <div style={{ display: "flex", gap: "1rem" }}>
                 <button className="btn btn-primary" onClick={handleSendOrder}>
-                  📱 Send SMS Order
+                  Send SMS Order
                 </button>
                 <button className="btn btn-secondary" onClick={closeOrderModal}>
                   Cancel

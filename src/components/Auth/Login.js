@@ -36,9 +36,9 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container"> 
       <div className="auth-card">
-        <h2>🚗 Vehicle Service Center</h2>
+        <h2>Vehicle Service Center Management Web App </h2>
         <h3 style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>Login</h3>
         
         {error && <div className="alert alert-error">{error}</div>}

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService } from '../services/api';
+import { IoPinSharp } from 'react-icons/io5';
+import { IoMdAdd } from "react-icons/io";
+
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -61,9 +64,12 @@ const Appointments = () => {
     <div className="container" style={{ paddingTop: '2rem' }}>
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="card-header" style={{ marginBottom: 0 }}>📋 My Appointments</h2>
+          <h2 className="card-header" style={{ marginBottom: 0 }}><IoPinSharp /> My Appointments</h2>
           <a href="/customer/book-appointment" className="btn btn-primary">
-            ➕ Book New
+            <button className="book-btn">
+            <IoMdAdd size={20} className="my-icon" />
+            <span>Book New</span>
+            </button>
           </a>
         </div>
 
@@ -140,7 +146,7 @@ const Appointments = () => {
 
                   {appointment.assignedMechanic && (
                     <p style={{ marginTop: '0.5rem' }}>
-                      <strong>👨‍🔧 Mechanic:</strong> {appointment.mechanic.name}
+                      <strong>👨‍🔧 Mechanic:</strong> {appointment.assignedMechanic.name}
                     </p>
                   )}
                 </div>

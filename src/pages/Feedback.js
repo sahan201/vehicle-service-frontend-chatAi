@@ -55,7 +55,7 @@ const Feedback = () => {
         rating: formData.rating,
         comment: formData.comment
       });
-      setSuccess('Thank you for your feedback! 🎉');
+      setSuccess('Thank you for your feedback!');
       setFormData({ appointmentId: '', rating: 5, comment: '' });
       
       setTimeout(() => {
@@ -161,7 +161,7 @@ const Feedback = () => {
 
       {/* My Previous Feedback */}
       <div className="card">
-        <h3 className="card-header">📝 My Previous Feedback</h3>
+        <h3 className="card-header">My Previous Feedback</h3>
         
         {myFeedback.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>

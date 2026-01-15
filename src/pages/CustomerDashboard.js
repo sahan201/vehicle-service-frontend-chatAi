@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { vehicleService, appointmentService } from '../services/api';
 import VirtualAssistant from '../components/Common/VirtualAssistant';
+import { Car, Calendar, Clock, CheckCircle, Plus, FileText, AlertCircle, ListChecks } from 'lucide-react';
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -52,7 +53,7 @@ const CustomerDashboard = () => {
   return (
     <div className="container dashboard">
       <div className="dashboard-header">
-        <h2>Welcome back, {user.name}! 👋</h2>
+        <h2>Welcome back, {user.name}!</h2>
         <p>Here's an overview of your vehicles and service appointments</p>
       </div>
 
@@ -124,7 +125,10 @@ const CustomerDashboard = () => {
                   </td>
                   <td>
                     {appointment.discountEligible ? (
-                      <span className="badge badge-success">5% Off 🎉</span>
+                      <span className="badge badge-success">
+                        <CheckCircle size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                        5% Off
+                      </span>
                     ) : (
                       <span style={{ color: '#999' }}>-</span>
                     )}
@@ -139,7 +143,10 @@ const CustomerDashboard = () => {
       {/* Quick Actions */}
       <div className="grid grid-2">
         <div className="card">
-          <h3 style={{ marginBottom: '1rem', color: '#667eea' }}>🚗 My Vehicles</h3>
+          <h3 style={{ marginBottom: '1rem', color: '#667eea', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Car size={24} />
+            My Vehicles
+          </h3>
           {vehicles.length === 0 ? (
             <p style={{ color: '#666' }}>No vehicles added yet.</p>
           ) : (
@@ -163,19 +170,26 @@ const CustomerDashboard = () => {
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '1rem', color: '#667eea' }}>📅 Quick Actions</h3>
+          <h3 style={{ marginBottom: '1rem', color: '#667eea', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <ListChecks size={24} />
+            Quick Actions
+          </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <a href="/customer/vehicles" className="btn btn-primary">
-              ➕ Add New Vehicle
+            <a href="/customer/vehicles" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+              <Plus size={18} />
+              Add New Vehicle
             </a>
-            <a href="/customer/book-appointment" className="btn btn-success">
-              📅 Book Appointment
+            <a href="/customer/book-appointment" className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+              <Calendar size={18} />
+              Book Appointment
             </a>
-            <a href="/customer/appointments" className="btn btn-secondary">
-              📋 View All Appointments
+            <a href="/customer/appointments" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+              <Clock size={18} />
+              View All Appointments
             </a>
-            <a href="/customer/complaints" className="btn btn-secondary">
-              📝 Submit Complaint
+            <a href="/customer/complaints" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+              <FileText size={18} />
+              Submit Complaint
             </a>
           </div>
         </div>

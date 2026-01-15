@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'Customer'
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "Customer",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -46,32 +46,36 @@ const Register = () => {
       formData.password,
       formData.role
     );
-    
+
     if (result.success) {
       // Redirect based on role
       const role = result.user.role;
-      if (role === 'Customer') {
-        navigate('/customer/dashboard');
-      } else if (role === 'Mechanic') {
-        navigate('/mechanic/dashboard');
-      } else if (role === 'Manager') {
-        navigate('/manager/dashboard');
+      if (role === "Customer") {
+        navigate("/customer/dashboard");
+      } else if (role === "Mechanic") {
+        navigate("/mechanic/dashboard");
+      } else if (role === "Manager") {
+        navigate("/manager/dashboard");
       }
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>🚗 Vehicle Service Center</h2>
-        <h3 style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>Register</h3>
-        
+        <h2>Vehicle Service Center Management Web Application</h2>
+        <h3
+          style={{ textAlign: "center", marginBottom: "2rem", color: "#666" }}
+        >
+          Register
+        </h3>
+
         {error && <div className="alert alert-error">{error}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full Name</label>
@@ -125,18 +129,16 @@ const Register = () => {
             <label>Register as</label>
             <select name="role" value={formData.role} onChange={handleChange}>
               <option value="Customer">Customer</option>
-              <option value="Mechanic">Mechanic</option>
-              <option value="Manager">Manager</option>
             </select>
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%' }}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
             disabled={loading}
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 

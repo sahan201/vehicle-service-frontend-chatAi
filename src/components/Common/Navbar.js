@@ -13,7 +13,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <h1>🚗 Vehicle Service Center</h1>
+      <h1>Vehicle Service Center</h1>
       
       <div className="navbar-links">
         {user && (
@@ -31,12 +31,7 @@ const Navbar = () => {
               </>
             )}
             
-            {user.role === 'Mechanic' && (
-              <>
-                <Link to="/mechanic/dashboard">Dashboard</Link>
-                <Link to="/mechanic/jobs">My Jobs</Link>
-              </>
-            )}
+          
             
             {user.role === 'Manager' && (
               <>

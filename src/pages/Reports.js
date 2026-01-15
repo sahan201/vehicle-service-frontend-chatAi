@@ -95,7 +95,7 @@ const Reports = () => {
     <div className="container" style={{ paddingTop: '2rem' }}>
       {/* Header */}
       <div className="dashboard-header">
-        <h2>📊 Business Reports</h2>
+        <h2>Business Reports</h2>
         <p>Generate and download comprehensive business analytics</p>
       </div>
 
@@ -104,7 +104,7 @@ const Reports = () => {
 
       {/* Report Generator */}
       <div className="card">
-        <h3 className="card-header">📥 Download Business Report (PDF)</h3>
+        <h3 className="card-header">Download Business Report (PDF)</h3>
         
         <div className="grid grid-2">
           <div className="form-group">
@@ -131,19 +131,19 @@ const Reports = () => {
             onClick={handleDownloadReport}
             disabled={loading}
           >
-            {loading ? '⏳ Generating...' : '📥 Download Comprehensive Report'}
+            {loading ? 'Generating...' : 'Download Comprehensive Report'}
           </button>
           <button 
             className="btn btn-secondary"
             onClick={handleRefresh}
             disabled={loading}
           >
-            🔄 Refresh Data
+            Refresh Data
           </button>
         </div>
 
         <div className="alert alert-info" style={{ marginTop: '1rem' }}>
-          <strong>💡 Report Includes:</strong> Financial summary, appointment statistics, 
+          <strong>Report Includes:</strong> Financial summary, appointment statistics, 
           popular services, inventory status, customer satisfaction, and mechanic performance.
         </div>
       </div>
@@ -151,7 +151,7 @@ const Reports = () => {
       {/* Quick Stats Overview */}
       {bookingStats && (
         <div className="card">
-          <h3 className="card-header">📈 Booking Statistics (Last Month)</h3>
+          <h3 className="card-header">Booking Statistics (Last Month)</h3>
           <div className="stats">
             <div className="stat-card">
               <h3>{bookingStats.stats.total}</h3>
@@ -176,7 +176,7 @@ const Reports = () => {
       {/* Revenue Report */}
       {revenueReport && (
         <div className="card">
-          <h3 className="card-header">💰 Revenue Report</h3>
+          <h3 className="card-header">Revenue Report</h3>
           <div style={{ padding: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
               <h4 style={{ color: '#667eea' }}>Total Revenue</h4>
@@ -219,7 +219,7 @@ const Reports = () => {
       {/* Inventory Report */}
       {inventoryReport && (
         <div className="card">
-          <h3 className="card-header">📦 Inventory Report</h3>
+          <h3 className="card-header">Inventory Report</h3>
           <div className="grid grid-2">
             <div style={{ padding: '1rem' }}>
               <h4 style={{ color: '#667eea' }}>Inventory Summary</h4>
@@ -264,7 +264,7 @@ const Reports = () => {
 
       {/* Export Options */}
       <div className="card">
-        <h3 className="card-header">📤 Quick Export Options</h3>
+        <h3 className="card-header">Quick Export Options</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
           <button 
             className="btn btn-secondary"
@@ -274,7 +274,7 @@ const Reports = () => {
               setTimeout(() => handleDownloadReport(), 100);
             }}
           >
-            📅 Today's Report
+            Today's Report
           </button>
           <button 
             className="btn btn-secondary"
@@ -289,7 +289,7 @@ const Reports = () => {
               setTimeout(() => handleDownloadReport(), 100);
             }}
           >
-            📊 Last 7 Days
+            Last 7 Days
           </button>
           <button 
             className="btn btn-secondary"
@@ -304,7 +304,7 @@ const Reports = () => {
               setTimeout(() => handleDownloadReport(), 100);
             }}
           >
-            📈 Last Month
+            Last Month
           </button>
           <button 
             className="btn btn-secondary"
@@ -319,7 +319,7 @@ const Reports = () => {
               setTimeout(() => handleDownloadReport(), 100);
             }}
           >
-            📆 Last Year
+            Last Year
           </button>
         </div>
       </div>
