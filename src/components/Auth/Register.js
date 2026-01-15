@@ -27,7 +27,6 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -40,22 +39,22 @@ const Register = () => {
 
     setLoading(true);
 
+    // Role is automatically set to Customer in backend
     const result = await register(
       formData.name,
       formData.email,
-      formData.password,
-      formData.role
+      formData.password
     );
 
     if (result.success) {
       // Redirect based on role
       const role = result.user.role;
-      if (role === "Customer") {
-        navigate("/customer/dashboard");
-      } else if (role === "Mechanic") {
-        navigate("/mechanic/dashboard");
-      } else if (role === "Manager") {
-        navigate("/manager/dashboard");
+      if (role === 'Customer') {
+        navigate('/customer/dashboard');
+      } else if (role === 'Mechanic') {
+        navigate('/mechanic/dashboard');
+      } else if (role === 'Manager') {
+        navigate('/manager/dashboard');
       }
     } else {
       setError(result.message);
@@ -67,13 +66,9 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Vehicle Service Center Management Web Application</h2>
-        <h3
-          style={{ textAlign: "center", marginBottom: "2rem", color: "#666" }}
-        >
-          Register
-        </h3>
-
+        <h2>🚗 Vehicle Service Center</h2>
+        <h3 style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>Register</h3>
+        
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
@@ -129,6 +124,8 @@ const Register = () => {
             <label>Register as</label>
             <select name="role" value={formData.role} onChange={handleChange}>
               <option value="Customer">Customer</option>
+              <option value="Mechanic">Mechanic</option>
+              <option value="Manager">Manager</option>
             </select>
           </div>
 
@@ -138,7 +135,7 @@ const Register = () => {
             style={{ width: "100%" }}
             disabled={loading}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
